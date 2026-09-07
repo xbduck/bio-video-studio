@@ -1,0 +1,15 @@
+{
+  "id": "360654f8",
+  "slug": "测试人物",
+  "person": "测试人物",
+  "title": "测试人物·一生",
+  "summary": "",
+  "style": "cinematic film still, epic historical biopic, warm natural lighting, shallow depth of field, highly detailed, photorealistic, 35mm anamorphic",
+  "voice": "zh-CN-YunjianNeural",
+  "rate": "+0%",
+  "bgm_path": "",
+  "bgm_volume": 0.18,
+  "created_at": "2026-08-30 11:06:08",
+  "updated_at": "2026-08-30 11:06:08",
+  "scenes": []
+}

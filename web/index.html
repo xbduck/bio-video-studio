@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生平短片工厂 · 输入人物名，产出成片</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark"></span>
+    <div>
+      <h1>生平短片工厂</h1>
+      <p>输入一个人物名 → 剧本 → 分镜图 → 分镜视频 → 配音字幕 → 成片</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span id="health" class="health"></span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ============ 侧栏：项目列表 ============ -->
+  <aside class="sidebar">
+    <div class="new-project">
+      <input id="personInput" type="text" placeholder="输入人物名，如：李白" autocomplete="off">
+      <button id="btnCreate" class="btn primary block">新建短片</button>
+    </div>
+    <div class="project-list" id="projectList"></div>
+    <div class="sidebar-foot">
+      <div class="hint">
+        <b>工作流</b>
+        <ol>
+          <li>建项目 → 复制提示词给 WorkBuddy 生成剧本</li>
+          <li>批量生图（我按分镜描述出图）</li>
+          <li>批量生成视频（图生视频，5 秒镜头）</li>
+          <li>本地配音 + 烧字幕 + 合成</li>
+        </ol>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ 主区 ============ -->
+  <section class="workspace" id="workspace">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-art"></div>
+      <h2>还没有项目</h2>
+      <p>在左侧输入人物名，比如「李白」「爱因斯坦」「武则天」，开始制作他的一生。</p>
+    </div>
+
+    <div class="project-view hidden" id="projectView">
+
+      <!-- 项目头部 -->
+      <div class="phead">
+        <div class="phead-main">
+          <input id="pTitle" class="title-input" type="text">
+          <div class="pmeta">
+            <span id="pPerson" class="tag person"></span>
+            <span id="pStats" class="tag"></span>
+            <span id="pUpdated" class="tag muted"></span>
+          </div>
+        </div>
+        <div class="phead-actions">
+          <button id="btnDelete" class="btn ghost danger">删除</button>
+        </div>
+      </div>
+
+      <!-- 提示条：需要 WorkBuddy 执行的任务 -->
+      <div class="callout hidden" id="callout">
+        <div class="callout-body">
+          <div class="callout-title" id="calloutTitle">等待 WorkBuddy 处理</div>
+          <div class="callout-desc" id="calloutDesc"></div>
+        </div>
+        <button id="btnCopyPrompt" class="btn accent">复制提示词</button>
+      </div>
+
+      <!-- 流水线步骤 -->
+      <div class="pipeline">
+        <button class="step" data-step="script" id="stepScript">
+          <span class="step-no">1</span>
+          <span class="step-label">生成剧本</span>
+          <span class="step-state" id="stateScript">—</span>
+        </button>
+        <button class="step" data-step="images" id="stepImages">
+          <span class="step-no">2</span>
+          <span class="step-label">批量生图</span>
+          <span class="step-state" id="stateImages">—</span>
+        </button>
+        <button class="step" data-step="videos" id="stepVideos">
+          <span class="step-no">3</span>
+          <span class="step-label">批量生视频</span>
+          <span class="step-state" id="stateVideos">—</span>
+        </button>
+        <button class="step local" data-step="tts" id="stepTts">
+          <span class="step-no">4</span>
+          <span class="step-label">配音（本地）</span>
+          <span class="step-state" id="stateTts">—</span>
+        </button>
+        <button class="step local" data-step="render" id="stepRender">
+          <span class="step-no">5</span>
+          <span class="step-label">合成出片（本地）</span>
+          <span class="step-state" id="stateRender">—</span>
+        </button>
+      </div>
+
+      <!-- 设置行 -->
+      <div class="settings">
+        <label>旁白音色
+          <select id="voiceSel"></select>
+        </label>
+        <label>语速
+          <select id="rateSel">
+            <option value="-10%">慢</option>
+            <option value="+0%" selected>正常</option>
+            <option value="+10%">稍快</option>
+          </select>
+        </label>
+        <label>背景音乐
+          <button id="btnBgm" class="btn small">上传 BGM</button>
+          <input type="file" id="bgmFile" accept="audio/*" hidden>
+          <span id="bgmName" class="muted small"></span>
+        </label>
+        <label>音乐音量
+          <input id="bgmVol" type="range" min="0" max="0.5" step="0.02" value="0.18">
+          <span id="bgmVolVal" class="muted small">0.18</span>
+        </label>
+        <button id="btnSaveSettings" class="btn small">保存设置</button>
+      </div>
+
+      <!-- 进度条 -->
+      <div class="progress-wrap hidden" id="progressWrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <span class="progress-text" id="progressText"></span>
+      </div>
+
+      <!-- 分镜表 -->
+      <div class="scenes-head">
+        <h3>分镜剧本</h3>
+        <div class="scenes-actions">
+          <button id="btnAddScene" class="btn small">+ 加分镜</button>
+          <button id="btnSaveScenes" class="btn small primary">保存剧本</button>
+        </div>
+      </div>
+      <div class="scenes" id="scenes"></div>
+
+      <!-- 成片 -->
+      <div class="result hidden" id="resultBox">
+        <h3>成片</h3>
+        <div class="result-body">
+          <video id="resultVideo" controls playsinline></video>
+          <div class="result-info">
+            <p id="resultMeta" class="muted"></p>
+            <a id="btnDownload" class="btn primary" download>下载 MP4</a>
+            <button id="btnOpenFolder" class="btn ghost">打开所在文件夹</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 任务队列 -->
+      <div class="tasks">
+        <h3>任务队列 <span class="muted small">（WorkBuddy 在对话里消费）</span></h3>
+        <div id="taskList" class="task-list"></div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<!-- 素材预览弹窗 -->
+<div class="modal hidden" id="modal">
+  <div class="modal-mask" id="modalMask"></div>
+  <div class="modal-body">
+    <button class="modal-close" id="modalClose">×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
