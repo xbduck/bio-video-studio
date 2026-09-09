@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920" />
+<title>09 · 问智 阡陌大模型</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:1080px; height:1920px; overflow:hidden; background:#000;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei","Source Han Sans CN",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage { position:relative; width:100%; height:100%; }
+  .bg {
+    position:absolute; inset:-8%;
+    background-image:url('assets/bg.png');
+    background-size:cover; background-position:50% 40%;
+    filter:blur(2px) brightness(0.7);
+  }
+  .vignette {
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 22%, rgba(0,0,0,0.7) 92%);
+  }
+
+  /* 数据流 SVG */
+  .datastream {
+    position:absolute; left:0; right:0; top:38%; height:340px;
+    opacity:0;
+  }
+  .stream-line {
+    fill:none; stroke-width:3; stroke-linecap:round; opacity:0.85;
+    stroke-dasharray:1200; stroke-dashoffset:1200;
+  }
+
+  /* 阡陌主体字 */
+  .mainword {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) scale(0.6);
+    opacity:0;
+  }
+  .mainword .cn {
+    font-size:280px; font-weight:900; color:#fff; letter-spacing:0.2em;
+    text-shadow:0 0 80px rgba(120,200,255,0.7), 0 0 160px rgba(120,200,255,0.4);
+  }
+  .mainword .en {
+    margin-top:18px; font-size:46px; color:#7fc8ff; letter-spacing:0.4em; text-align:center;
+    text-shadow:0 0 30px rgba(120,200,255,0.6);
+  }
+
+  /* 调度/安全/服务 三个标签 */
+  .tri {
+    position:absolute; left:50%; top:73%; transform:translateX(-50%);
+    display:flex; gap:30px; opacity:0;
+  }
+  .tag {
+    width:240px; padding:20px 0; text-align:center;
+    background:linear-gradient(160deg, rgba(20,40,80,0.85), rgba(8,16,36,0.85));
+    border:1.5px solid #4ab1ff; border-radius:10px;
+    font-size:54px; color:#cce6ff; letter-spacing:0.18em;
+    box-shadow:0 0 36px rgba(74,177,255,0.3);
+    opacity:0; transform:translateY(40px);
+  }
+
+  .topbar {
+    position:absolute; top:130px; left:50%; transform:translateX(-50%);
+    text-align:center; opacity:0;
+  }
+  .topbar .year { font-size:40px; color:#4ab1ff; letter-spacing:0.3em; margin-bottom:14px; }
+  .topbar .title {
+    font-size:74px; font-weight:800; color:#fff; letter-spacing:0.06em;
+    text-shadow:0 4px 30px rgba(0,0,0,0.9);
+  }
+
+  .subtitle {
+    position:absolute; bottom:150px; left:50%; transform:translateX(-50%);
+    font-size:58px; font-weight:700; color:#fff; white-space:nowrap; opacity:0;
+    text-shadow:0 4px 24px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,1);
+  }
+.subtitle { opacity: 0 !important; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg" id="bg"></div>
+  <div class="vignette"></div>
+
+  <div class="topbar" id="topbar">
+    <div class="year">2023 年 11 月</div>
+    <div class="title">问智 · 阡陌大模型</div>
+  </div>
+
+  <svg class="datastream" id="ds" viewBox="0 0 1080 340" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="lg1" x1="0" x2="1">
+        <stop offset="0" stop-color="#4ab1ff" stop-opacity="0"/>
+        <stop offset="0.4" stop-color="#4ab1ff" stop-opacity="0.5"/>
+        <stop offset="1" stop-color="#7fc8ff" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="lg2" x1="0" x2="1">
+        <stop offset="0" stop-color="#9d6dff" stop-opacity="0"/>
+        <stop offset="0.5" stop-color="#9d6dff" stop-opacity="0.55"/>
+        <stop offset="1" stop-color="#c8a8ff" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="lg3" x1="0" x2="1">
+        <stop offset="0" stop-color="#5dffb0" stop-opacity="0"/>
+        <stop offset="0.5" stop-color="#5dffb0" stop-opacity="0.45"/>
+        <stop offset="1" stop-color="#a6ffd5" stop-opacity="0.95"/>
+      </linearGradient>
+    </defs>
+    <path id="sl1" d="M0,80 Q200,40 400,100 T800,120 T1080,60"
+          stroke="url(#lg1)" class="stream-line"/>
+    <path id="sl2" d="M0,180 Q240,140 480,200 T960,170 T1080,150"
+          stroke="url(#lg2)" class="stream-line" style="stroke-dashoffset:1200"/>
+    <path id="sl3" d="M0,260 Q220,300 460,240 T880,290 T1080,260"
+          stroke="url(#lg3)" class="stream-line" style="stroke-dashoffset:1200"/>
+  </svg>
+
+  <div class="mainword" id="mw">
+    <div class="cn">阡 陌</div>
+    <div class="en">Q I A N M O &nbsp; M O D E L</div>
+  </div>
+
+  <div class="tri" id="tri">
+    <div class="tag" id="t1">调 度</div>
+    <div class="tag" id="t2">安 全</div>
+    <div class="tag" id="t3">服 务</div>
+  </div>
+
+  <div class="subtitle" id="subtitle"></div>
+</div>
+
+<script>
+const bg = document.getElementById('bg');
+const topbar = document.getElementById('topbar');
+const ds = document.getElementById('ds');
+const sl1 = document.getElementById('sl1');
+const sl2 = document.getElementById('sl2');
+const sl3 = document.getElementById('sl3');
+const mw = document.getElementById('mw');
+const tri = document.getElementById('tri');
+const tags = [1,2,3].map(i => document.getElementById('t'+i));
+const subtitle = document.getElementById('subtitle');
+
+const SUBS = [
+  { t0:0.4,  t1:5.2,  text:'中国电信联合打造' },
+  { t0:5.6,  t1:10.0, text:'出行行业首个生态大模型' },
+  { t0:10.6, t1:14.8, text:'调度 · 安全 · 服务' },
+];
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+function ease(t){ return 1-Math.pow(1-t,3); }
+function clamp(x,lo,hi){ return Math.max(lo,Math.min(hi,x)); }
+function win(t,s,e,f){ f=f||0.35;
+  if (t<s||t>e) return 0;
+  return Math.min(1, Math.min((t-s)/f,(e-t)/f));
+}
+
+function update(t){
+  // === 运镜：0–6s 从指挥大厅入口推入，6–12s 缓推穿过屏幕 ===
+  if (t < 6) {
+    const p = ease(t/6);
+    bg.style.transform = `scale(${lerp(1.0,1.28,p)}) translate(${lerp(0,-2,p)}%, ${lerp(-5,1,p)}%)`;
+    bg.style.filter = `blur(${lerp(3,1.2,p)}px) brightness(${lerp(0.6,0.85,p)})`;
+  } else if (t < 12) {
+    const p = ease((t-6)/6);
+    bg.style.transform = `scale(${lerp(1.28,1.46,p)}) translate(${lerp(0,-1,p)}%, ${lerp(1,3,p)}%)`;
+    bg.style.filter = `blur(${lerp(1.2,0.5,p)}px) brightness(${lerp(0.85,0.95,p)})`;
+  } else {
+    bg.style.transform = 'scale(1.46) translate(0%,3%)';
+    bg.style.filter = 'blur(0.5px) brightness(0.95)';
+  }
+
+  topbar.style.opacity = String(win(t, 0.8, 5.2, 0.5));
+
+  // === 数据流：4.0–10.0s 三条依次汇成长河 ===
+  if (t < 4) { ds.style.opacity='0'; }
+  else if (t < 4.5) { ds.style.opacity=String((t-4)/0.5); }
+  else { ds.style.opacity='1'; }
+  // 三条线分别在不同时间绘完
+  const drawProgress = [
+    clamp((t-4.0)/2.2, 0, 1),
+    clamp((t-5.0)/2.2, 0, 1),
+    clamp((t-6.0)/2.2, 0, 1),
+  ];
+  sl1.style.strokeDashoffset = String(lerp(1200, 0, drawProgress[0]));
+  sl2.style.strokeDashoffset = String(lerp(1200, 0, drawProgress[1]));
+  sl3.style.strokeDashoffset = String(lerp(1200, 0, drawProgress[2]));
+
+  // === 「阡陌」主体字：8.5–11s 浮现 ===
+  if (t < 8.5) {
+    mw.style.opacity='0'; mw.style.transform='translate(-50%,-50%) scale(0.6)';
+  } else if (t < 9.8) {
+    const p = ease((t-8.5)/1.3);
+    mw.style.opacity=String(p);
+    mw.style.transform = `translate(-50%,-50%) scale(${lerp(0.6,1.04, p)})`;
+  } else if (t < 13.5) {
+    mw.style.opacity='1';
+    mw.style.transform = `translate(-50%,-50%) scale(1)`;
+  } else {
+    const out = clamp(1-(t-13.5)/1, 0, 1);
+    mw.style.opacity = String(out);
+    mw.style.transform = `translate(-50%,-50%) scale(${lerp(1, 1.05, 1-out)})`;
+  }
+
+  // === 调度/安全/服务三标签：10.5–11.5s 依次滑入 ===
+  let anyTag = false;
+  tags.forEach((tg, i) => {
+    const s = 10.5 + i*0.4;
+    if (t < s) { tg.style.opacity='0'; tg.style.transform='translateY(40px)'; return; }
+    anyTag = true;
+    const p = ease(clamp((t-s)/0.5, 0, 1));
+    const out = t > 13.5 ? 1-clamp((t-13.5)/0.8, 0, 1) : 1;
+    tg.style.opacity = String(p*out);
+    tg.style.transform = `translateY(${lerp(40, 0, p)}px)`;
+  });
+  tri.style.opacity = anyTag ? '1' : '0';
+
+  // === 字幕 ===
+  let st=0, txt='';
+  for (const s of SUBS) if (t>=s.t0 && t<=s.t1) { st=win(t,s.t0,s.t1,0.4); txt=s.text; }
+  subtitle.textContent = txt || SUBS[0].text;
+  subtitle.style.opacity = String(st);
+}
+
+window.__update = update;
+update(0);
+</script>
+</body>
+</html>

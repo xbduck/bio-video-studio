@@ -171,6 +171,14 @@ h1, h2, h3 { margin: 0; font-weight: 650; letter-spacing: .01em; }
 .settings select { padding: 5px 8px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--panel-2); }
 .settings input[type=range] { width: 90px; }
 
+/* 生视频方式：重点突出，避免被忽略 */
+.settings label.hot { color: #d9202e; font-weight: 800; font-size: 13.5px; }
+.settings label.hot select {
+  color: #d9202e; font-weight: 800;
+  border: 2px solid #d9202e; background: #fff5f5;
+}
+.settings label.hot select option { color: #1a1a1a; font-weight: 500; }
+
 /* ---------------- 进度 ---------------- */
 .progress-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .progress-bar { flex: 1 1 auto; height: 7px; background: var(--line); border-radius: 4px; overflow: hidden; }

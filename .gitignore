@@ -22,4 +22,8 @@ projects/*/images/
 projects/*/output/
 projects/*/subs/
 projects/*/videos/
+projects/*/videos_ai/
 projects/*/bgm.mp3
+
+# HyperFrames 中间产物：assets/bg.png 是 images/ 的拷贝，只保留 index.html 模板入库
+projects/*/hf/*/assets/

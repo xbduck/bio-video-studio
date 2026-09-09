@@ -50,6 +50,7 @@ class ScenesIn(BaseModel):
 class GenerateIn(BaseModel):
     indices: list[int] | None = None   # 空表示全部分镜
     style: str | None = None
+    route: str | None = None   # 生视频路线：hf 本地渲染(0积分) | ai 视频大模型 | mix 混合
 
 
 class AssetIn(BaseModel):
@@ -212,7 +213,10 @@ def api_request_videos(project_id: str, body: GenerateIn):
     p = store.load_project(project_id)
     if not p:
         raise HTTPException(404, "项目不存在")
-    t = store.enqueue("videos", project_id, {"indices": body.indices or []})
+    route = (body.route or "hf").strip().lower()
+    if route not in ("hf", "ai", "mix"):
+        route = "hf"
+    t = store.enqueue("videos", project_id, {"indices": body.indices or [], "route": route})
     return t
 
 

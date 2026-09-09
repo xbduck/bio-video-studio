@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920" />
+<title>06 · 立盟 鳌头联盟与4833</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:1080px; height:1920px; overflow:hidden; background:#000;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei","Source Han Sans CN",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage { position:relative; width:100%; height:100%; }
+  .bg {
+    position:absolute; inset:-8%;
+    background-image:url('assets/bg.png');
+    background-size:cover; background-position:50% 40%;
+    filter:blur(2px) brightness(0.78);
+  }
+  .vignette {
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.6) 92%);
+  }
+
+  .topbar {
+    position:absolute; top:150px; left:50%; transform:translateX(-50%);
+    text-align:center; opacity:0;
+  }
+  .topbar .year { font-size:40px; color:#a78bfa; letter-spacing:0.3em; margin-bottom:14px; }
+  .topbar .title {
+    font-size:74px; font-weight:800; color:#fff; letter-spacing:0.06em;
+    text-shadow:0 4px 30px rgba(0,0,0,0.9);
+  }
+
+  /* 蓝紫光束扫过 */
+  .beam {
+    position:absolute; top:-30%; left:-60%;
+    width:55%; height:190%; opacity:0; pointer-events:none;
+    background:linear-gradient(100deg,
+      transparent 0%, rgba(140,110,255,0.0) 30%,
+      rgba(150,120,255,0.42) 48%, rgba(190,170,255,0.6) 52%,
+      rgba(150,120,255,0.38) 56%, transparent 100%);
+    filter:blur(24px);
+  }
+
+  /* 大屏 */
+  .screen {
+    position:absolute; left:50%; top:44%; transform:translate(-50%,-50%) scale(0.92);
+    width:900px; padding:56px 40px; text-align:center;
+    background:linear-gradient(150deg, rgba(16,12,44,0.96), rgba(8,6,26,0.96));
+    border:2px solid #7c5cff; border-radius:16px;
+    box-shadow:0 0 100px rgba(124,92,255,0.3), 0 24px 60px rgba(0,0,0,0.6);
+    opacity:0;
+  }
+  .screen .s-label {
+    font-size:36px; color:#b9a6ff; letter-spacing:0.24em; margin-bottom:26px;
+  }
+  .screen .s-name {
+    font-size:80px; font-weight:800; color:#f0ecff; letter-spacing:0.1em;
+    text-shadow:0 0 50px rgba(150,120,255,0.6);
+  }
+  .screen .s-sub {
+    margin-top:18px; font-size:32px; color:#9d92c8; letter-spacing:0.16em;
+  }
+
+  /* 4833 战略数字 */
+  .strategy {
+    position:absolute; left:50%; top:60%; transform:translateX(-50%);
+    display:flex; gap:26px; opacity:0;
+  }
+  .digit {
+    width:170px; height:210px; border-radius:14px;
+    background:linear-gradient(160deg, rgba(30,20,70,0.95), rgba(12,8,32,0.95));
+    border:2px solid #6d4aff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:120px; font-weight:900; color:#c9b6ff;
+    text-shadow:0 0 50px rgba(150,120,255,0.7);
+    opacity:0; transform:scale(0.7);
+  }
+
+  .note {
+    position:absolute; left:50%; top:72%; transform:translateX(-50%);
+    font-size:40px; color:#e6dcff; letter-spacing:0.18em; opacity:0;
+    text-shadow:0 0 30px rgba(140,110,255,0.6);
+  }
+
+  .flash {
+    position:absolute; inset:0; pointer-events:none; opacity:0;
+    background:radial-gradient(circle at 50% 44%,
+      rgba(200,180,255,0.85), rgba(140,110,255,0.35) 30%, transparent 68%);
+  }
+
+  .subtitle {
+    position:absolute; bottom:150px; left:50%; transform:translateX(-50%);
+    font-size:58px; font-weight:700; color:#fff; white-space:nowrap; opacity:0;
+    text-shadow:0 4px 24px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,1);
+  }
+.subtitle { opacity: 0 !important; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg" id="bg"></div>
+  <div class="vignette"></div>
+  <div class="beam" id="beam"></div>
+
+  <div class="topbar" id="topbar">
+    <div class="year">2020 年 12 月</div>
+    <div class="title">立盟 · 鳌头联盟</div>
+  </div>
+
+  <div class="screen" id="screen">
+    <div class="s-label">自 动 驾 驶 生 态 运 营 联 盟</div>
+    <div class="s-name">鳌 头 联 盟</div>
+    <div class="s-sub">联 合 三 十 余 家 伙 伴</div>
+  </div>
+
+  <div class="strategy" id="strategy">
+    <div class="digit" id="d1">4</div>
+    <div class="digit" id="d2">8</div>
+    <div class="digit" id="d3">3</div>
+    <div class="digit" id="d4">3</div>
+  </div>
+  <div class="note" id="note">四十八城 · 日均三百万单</div>
+
+  <div class="flash" id="flash"></div>
+  <div class="subtitle" id="subtitle"></div>
+</div>
+
+<script>
+const bg = document.getElementById('bg');
+const topbar = document.getElementById('topbar');
+const beam = document.getElementById('beam');
+const screen = document.getElementById('screen');
+const digits = [1,2,3,4].map(i=>document.getElementById('d'+i));
+const note = document.getElementById('note');
+const flash = document.getElementById('flash');
+const subtitle = document.getElementById('subtitle');
+
+const SUBS = [
+  { t0:0.4,  t1:5.6,  text:'联合三十余家伙伴' },
+  { t0:6.2,  t1:11.4, text:'发起自动驾驶生态运营联盟' },
+  { t0:12.0, t1:16.4, text:'四十八城 · 日均三百万单' },
+];
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+function ease(t){ return 1-Math.pow(1-t,3); }
+function clamp(x,lo,hi){ return Math.max(lo,Math.min(hi,x)); }
+function win(t,s,e,f){ f=f||0.35;
+  if (t<s||t>e) return 0;
+  return Math.min(1, Math.min((t-s)/f,(e-t)/f));
+}
+
+function update(t){
+  // === 运镜：0–6s 从观众席后方推向前方舞台，之后缓推 ===
+  if (t < 6) {
+    const p = ease(t/6);
+    bg.style.transform = `scale(${lerp(1.0,1.28,p)}) translate(${lerp(0,-1,p)}%, ${lerp(-3,2,p)}%)`;
+    bg.style.filter = `blur(${lerp(3,1.4,p)}px) brightness(${lerp(0.6,0.82,p)})`;
+  } else if (t < 12) {
+    const p = ease((t-6)/6);
+    bg.style.transform = `scale(${lerp(1.28,1.5,p)}) translate(${lerp(-1,0,p)}%, ${lerp(2,4,p)}%)`;
+    bg.style.filter = `blur(${lerp(1.4,0.5,p)}px) brightness(${lerp(0.82,0.92,p)})`;
+  } else {
+    bg.style.transform = 'scale(1.5) translate(0%,4%)';
+    bg.style.filter = 'blur(0.5px) brightness(0.92)';
+  }
+
+  topbar.style.opacity = String(win(t, 1.0, 5.6, 0.5));
+
+  // === 光束扫过人群：3.5–7.5s（从左扫到右） ===
+  if (t >= 3.5 && t < 7.5) {
+    const p = (t-3.5)/4;
+    beam.style.opacity = String(Math.sin(Math.PI*clamp(p,0,1))*0.95);
+    beam.style.left = `${lerp(-60, 120, p)}%`;
+  } else {
+    beam.style.opacity = '0';
+  }
+
+  // === 大屏：4.5s 淡入，10.6s 骤然亮起 ===
+  if (t < 4.5) {
+    screen.style.opacity='0'; screen.style.transform='translate(-50%,-50%) scale(0.92)';
+  } else if (t < 5.5) {
+    const p = ease(t-4.5);
+    screen.style.opacity=String(p); screen.style.transform=`translate(-50%,-50%) scale(${lerp(0.92,1,p)})`;
+  } else {
+    screen.style.opacity='1'; screen.style.transform='translate(-50%,-50%) scale(1)';
+  }
+  // 10.6s 骤亮
+  let gs = 0;
+  if (t>=10.6 && t<10.9) gs = (t-10.6)/0.3;
+  else if (t>=10.9 && t<11.8) gs = 1 - (t-10.9)/0.9*0.75;
+  else if (t>=11.8) gs = 0.25;
+  screen.style.boxShadow = `0 0 ${100+160*gs}px rgba(124,92,255,${0.3+0.55*gs}), 0 24px 60px rgba(0,0,0,0.6)`;
+  screen.style.filter = `brightness(${1+0.6*gs})`;
+
+  // === 4833 四个数字依次点亮：11.5 / 12.0 / 12.5 / 13.0s ===
+  const base = 11.5;
+  let anyVisible = false;
+  digits.forEach((d, i) => {
+    const s = base + i*0.5;
+    if (t < s) { d.style.opacity='0'; d.style.transform='scale(0.7)'; return; }
+    anyVisible = true;
+    const p = ease(clamp((t-s)/0.45, 0, 1));
+    const out = t > 16.0 ? 1 - clamp((t-16.0)/0.7, 0, 1) : 1;
+    d.style.opacity = String(p*out);
+    d.style.transform = `scale(${lerp(0.7, 1, p)})`;
+  });
+  document.getElementById('strategy').style.opacity = anyVisible ? '1' : '0';
+
+  // === 注解：13.6–16.5s ===
+  note.style.opacity = String(win(t, 13.6, 16.5, 0.5));
+
+  // === 启动装置按下瞬间的闪光：10.5–11.2s ===
+  let fv = 0;
+  if (t>=10.5 && t<10.68) fv = (t-10.5)/0.18*0.9;
+  else if (t>=10.68 && t<11.4) fv = 0.9*Math.pow(1-(t-10.68)/0.72, 2);
+  flash.style.opacity = String(fv);
+
+  // === 字幕 ===
+  let st=0, txt='';
+  for (const s of SUBS) if (t>=s.t0 && t<=s.t1) { st=win(t,s.t0,s.t1,0.4); txt=s.text; }
+  subtitle.textContent = txt || SUBS[0].text;
+  subtitle.style.opacity = String(st);
+}
+
+window.__update = update;
+update(0);
+</script>
+</body>
+</html>

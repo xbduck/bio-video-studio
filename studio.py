@@ -52,6 +52,7 @@ def cmd_pending(args):
             ] if p else []
         elif t["type"] == "videos":
             idxs = t["payload"].get("indices") or []
+            item["route"] = (t["payload"].get("route") or "hf").lower()
             item["targets"] = [
                 {"index": s["index"], "title": s.get("title", ""),
                  "video_prompt": s.get("video_prompt", ""),

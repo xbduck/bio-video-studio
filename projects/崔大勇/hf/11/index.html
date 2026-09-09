@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920" />
+<title>11 · 转正 · 七百四十四万元</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:1080px; height:1920px; overflow:hidden; background:#000;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei","Source Han Sans CN",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage { position:relative; width:100%; height:100%; }
+  .bg {
+    position:absolute; inset:-8%;
+    background-image:url('assets/bg.png');
+    background-size:cover; background-position:50% 40%;
+    transform:scale(1.02);
+    filter:blur(2px) brightness(0.8);
+  }
+  .vignette {
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.6) 92%);
+  }
+  .topbar {
+    position:absolute; top:150px; left:50%; transform:translateX(-50%);
+    text-align:center; opacity:0;
+  }
+  .topbar .year { font-size:40px; color:#d4af37; letter-spacing:0.3em; margin-bottom:14px; }
+  .topbar .title {
+    font-size:76px; font-weight:800; color:#fff; letter-spacing:0.06em;
+    text-shadow:0 4px 30px rgba(0,0,0,0.9); white-space:nowrap;
+  }
+  .flash {
+    position:absolute; inset:0; pointer-events:none; opacity:0;
+    background:radial-gradient(circle at 38% 42%,
+      rgba(255,255,255,0.98), rgba(255,250,235,0.7) 22%, rgba(255,240,210,0.25) 45%, transparent 70%);
+  }
+  .stats {
+    position:absolute; left:50%; top:62%; transform:translateX(-50%);
+    display:flex; gap:60px; opacity:0;
+  }
+  .stat { text-align:center; }
+  .stat .num {
+    font-size:76px; font-weight:800; color:#f5e9d0; letter-spacing:0.02em;
+    text-shadow:0 0 30px rgba(212,175,55,0.55), 0 4px 20px rgba(0,0,0,0.9);
+  }
+  .stat .lbl { margin-top:8px; font-size:28px; color:#9fb0c8; letter-spacing:0.18em; }
+  .subtitle {
+    position:absolute; bottom:150px; left:50%; transform:translateX(-50%);
+    font-size:60px; font-weight:700; color:#fff; white-space:nowrap; opacity:0;
+  }
+  .subtitle { opacity: 0 !important; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg" id="bg"></div>
+  <div class="vignette"></div>
+  <div class="topbar" id="topbar">
+    <div class="year">2025年12月</div>
+    <div class="title">七百四十四万元</div>
+  </div>
+  <div class="stats" id="stats">
+    <div class="stat"><div class="num">194</div><div class="lbl">座 城 市</div></div>
+    <div class="stat"><div class="num">2.3 亿</div><div class="lbl">注 册 用 户</div></div>
+    <div class="stat"><div class="num">744 万</div><div class="lbl">全 年 利 润</div></div>
+  </div>
+  <div class="flash" id="flash"></div>
+  <div class="subtitle"></div>
+</div>
+<script>
+const DUR = 30.370;
+const bg = document.getElementById('bg');
+const topbar = document.getElementById('topbar');
+const stats = document.getElementById('stats');
+const flash = document.getElementById('flash');
+const SEGS = [[0, 0.6, 1.6, 1.1, -4, 1, 0, -1, 3.0, 0.8, 0.75, 0.93], [0.6, 1, 1.1, 1.04, 1, 3, -1, -1, 0.8, 0.5, 0.93, 0.95]];
+const SWAY = 0.0;
+const FLASHES = [];
+const HAS_STATS = true;
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+function ease(t){ return 1-Math.pow(1-t,3); }
+function clamp(x,lo,hi){ return Math.max(lo,Math.min(hi,x)); }
+function win(t,s,e,fade){
+  fade = fade||0.5;
+  if (t < s || t > e) return 0;
+  return Math.min(1, Math.min((t-s)/fade, (e-t)/fade));
+}
+
+function cameraAt(p) {
+  for (const s of SEGS) {
+    if (p >= s[0] && p <= s[1]) {
+      const k = s[1] > s[0] ? ease((p - s[0]) / (s[1] - s[0])) : 1;
+      return {
+        scale: lerp(s[2], s[3], k), tx: lerp(s[4], s[5], k), ty: lerp(s[6], s[7], k),
+        blur: lerp(s[8], s[9], k), bright: lerp(s[10], s[11], k)
+      };
+    }
+  }
+  const last = SEGS[SEGS.length-1];
+  return {scale:last[3], tx:last[5], ty:last[7], blur:last[9], bright:last[11]};
+}
+
+function update(t) {
+  const p = clamp(t / DUR, 0, 1);
+  const c = cameraAt(p);
+  const sway = SWAY ? Math.sin(t * 1.6) * SWAY * 100 : 0;
+  bg.style.transform = 'scale(' + c.scale.toFixed(4) + ') translate(' +
+    (c.tx + sway).toFixed(3) + '%, ' + c.ty.toFixed(3) + '%)';
+  bg.style.filter = 'blur(' + c.blur.toFixed(3) + 'px) brightness(' + c.bright.toFixed(3) + ')';
+
+  topbar.style.opacity = String(win(t, 0.8, DUR * 0.42, 0.5));
+
+  if (HAS_STATS) {
+    const s0 = DUR * 0.28;
+    if (t < s0) { stats.style.opacity='0'; stats.style.transform='translateX(-50%) translateY(40px)'; }
+    else {
+      const k = ease(clamp((t - s0) / 1.0, 0, 1));
+      stats.style.opacity = String(k);
+      stats.style.transform = 'translateX(-50%) translateY(' + lerp(40, 0, k).toFixed(1) + 'px)';
+    }
+  } else {
+    stats.style.display = 'none';
+  }
+
+  let fv = 0;
+  for (const f of FLASHES) {
+    const ft = f * DUR, d = t - ft;
+    if (d >= 0 && d < 0.42) {
+      fv = Math.max(fv, d < 0.06 ? d/0.06 : Math.pow(1 - (d-0.06)/0.36, 2));
+    }
+  }
+  flash.style.opacity = String(fv);
+}
+
+window.__update = update;
+update(0);
+</script>
+</body>
+</html>

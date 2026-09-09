@@ -192,19 +192,37 @@ function renderCallout() {
   const types = [...new Set(active.map((t) => t.type))];
   const label = types.map((t) => STEP_LABEL[t] || t).join(' + ');
   $('calloutTitle').textContent = `已排队：生成${label}`;
+  const vTask = active.find((t) => t.type === 'videos');
+  const route = vTask && vTask.payload && vTask.payload.route;
   $('calloutDesc').textContent =
+    (route ? `路线：${ROUTE_LABEL[route] || route}。` : '') +
     '这一步由 WorkBuddy 在对话里执行。复制提示词发给我即可开始。';
   state.promptText = buildPrompt(types, p);
 }
+
+const ROUTE_LABEL = {
+  hf: 'HyperFrames 本地渲染（不消耗积分）',
+  ai: '视频大模型（VideoGen，约 50-100 积分/条）',
+  mix: '混合：重点镜头用视频大模型，其余走本地渲染',
+};
 
 function buildPrompt(types, p) {
   const nAll = p.scenes.length;
   const nImg = p.scenes.filter((s) => s.image_path).length;
   const nVid = p.scenes.filter((s) => s.video_path).length;
+  let videosLine = '';
+  if (types.includes('videos')) {
+    const t = (state.tasks || []).find(
+      (x) => x.project_id === p.id && x.type === 'videos' &&
+             (x.status === 'pending' || x.status === 'running')
+    );
+    const r = (t && t.payload && t.payload.route) || 'hf';
+    videosLine = `把【${p.person}】的批量生成视频任务跑完（共 ${nAll - nVid} 条待生成），路线：${ROUTE_LABEL[r] || r}`;
+  }
   const map = {
     script: `为【${p.person}】写一份从出生到死亡的分镜剧本（8-12 个重大事件，每镜含旁白、生图提示词、运镜提示词），并写入工程`,
     images: `把【${p.person}】的批量生图任务跑完（共 ${nAll - nImg} 张待生成）`,
-    videos: `把【${p.person}】的批量生成视频任务跑完（共 ${nAll - nVid} 条待生成）`,
+    videos: videosLine,
   };
   const parts = types.map((t) => map[t]).filter(Boolean);
   return `请处理「生平短片工厂」的待办任务：\n1. ${parts.join('\n2. ')}\n（工程目录：bio-video-studio/projects/${p.slug}）`;
@@ -383,8 +401,9 @@ async function requestStep(type) {
     } else if (type === 'videos') {
       const todo = p.scenes.filter((s) => s.image_path && !s.video_path).map((s) => s.index);
       if (!todo.length) { toast('没有可生成视频的分镜（需先有图片）'); return; }
+      const route = ($('videoRoute') && $('videoRoute').value) || 'hf';
       await api(`/api/projects/${p.id}/request/videos`, {
-        method: 'POST', body: JSON.stringify({ indices: todo }),
+        method: 'POST', body: JSON.stringify({ indices: todo, route }),
       });
     } else if (type === 'tts') {
       if (!p.scenes.length) { toast('请先生成剧本'); return; }

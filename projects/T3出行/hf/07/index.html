@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920" />
+<title>07 · 输血 77亿与三百万单</title>
+<style>
+  :root { --gold:#d4af37; --gold-soft:#f5e9d0; --red:#ff3a3a; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:1080px; height:1920px; overflow:hidden; background:#000;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei","Source Han Sans CN",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage { position:relative; width:100%; height:100%; }
+
+  .bg {
+    position:absolute; inset:-8%;
+    background-image:url('assets/bg.png');
+    background-size:cover; background-position:50% 35%;
+    transform-origin:35% 30%;
+    filter:blur(4px) brightness(0.45);
+  }
+  .vignette {
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.55) 90%);
+  }
+
+  .screen {
+    position:absolute; left:50%; top:42%; transform:translate(-50%,-50%) scale(0.8);
+    width:880px; height:560px;
+    background:linear-gradient(135deg, #0d1530 0%, #1a2050 50%, #060614 100%);
+    border:3px solid var(--gold); border-radius:18px;
+    box-shadow:0 0 140px rgba(212,175,55,0.35), 0 30px 80px rgba(0,0,0,0.5), inset 0 0 80px rgba(0,0,0,0.4);
+    opacity:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .screen::before {
+    content:''; position:absolute; top:-50%; left:-50%;
+    width:200%; height:200%;
+    background:linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
+    transform:translate(-30%,-30%);
+  }
+
+  .label {
+    font-size:56px; color:var(--gold-soft); letter-spacing:0.18em; margin-bottom:24px;
+    opacity:0;
+  }
+  .row {
+    display:flex; align-items:baseline; gap:16px; margin-bottom:24px;
+  }
+  .num {
+    font-size:240px; font-weight:900; color:var(--red); line-height:0.9;
+    letter-spacing:-0.02em;
+    text-shadow:0 0 50px rgba(255,58,58,0.7), 0 0 120px rgba(255,58,58,0.4), 0 4px 8px rgba(0,0,0,0.6);
+  }
+  .unit {
+    font-size:80px; color:var(--gold); font-weight:700;
+    text-shadow:0 0 30px rgba(212,175,55,0.4);
+  }
+  .curve {
+    position:absolute; bottom:30px; left:30px; right:30px; height:100px; opacity:0;
+  }
+
+  .flash {
+    position:absolute; inset:0; pointer-events:none; opacity:0;
+    background:radial-gradient(circle at center,
+      rgba(255,220,150,0.85), rgba(255,180,80,0.4) 25%, transparent 65%);
+  }
+
+  .topbar {
+    position:absolute; top:150px; left:50%; transform:translateX(-50%);
+    text-align:center; opacity:0;
+  }
+  .topbar .year { font-size:40px; color:var(--gold); letter-spacing:0.3em; margin-bottom:14px; }
+  .topbar .title {
+    font-size:74px; font-weight:800; color:#fff; letter-spacing:0.06em;
+    text-shadow:0 4px 30px rgba(0,0,0,0.9);
+  }
+
+  .subtitle {
+    position:absolute; bottom:150px; left:50%; transform:translateX(-50%);
+    font-size:60px; font-weight:700; color:#fff; white-space:nowrap; opacity:0;
+    text-shadow:0 4px 24px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,1);
+  }
+.subtitle { opacity: 0 !important; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg" id="bg"></div>
+  <div class="vignette"></div>
+
+  <div class="topbar" id="topbar">
+    <div class="year">2021 年 10 月</div>
+    <div class="title">输血 · 77亿与三百万单</div>
+  </div>
+
+  <div class="screen" id="screen">
+    <div class="label">A 轮 融 资 到 账</div>
+    <div class="row">
+      <span class="num" id="num">0</span><span class="unit" id="unit">亿元</span>
+    </div>
+    <svg class="curve" id="curve" viewBox="0 0 800 100" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="g" x1="0" x2="1">
+          <stop offset="0" stop-color="#ff3a3a" stop-opacity="0"/>
+          <stop offset="0.3" stop-color="#ff3a3a" stop-opacity="0.5"/>
+          <stop offset="1" stop-color="#ff3a3a" stop-opacity="1"/>
+        </linearGradient>
+        <linearGradient id="gf" x1="0" x2="1">
+          <stop offset="0" stop-color="#ff3a3a" stop-opacity="0"/>
+          <stop offset="0.3" stop-color="#ff3a3a" stop-opacity="0.15"/>
+          <stop offset="1" stop-color="#ff3a3a" stop-opacity="0.3"/>
+        </linearGradient>
+      </defs>
+      <path d="M0,90 L100,75 L200,82 L300,55 L400,45 L500,28 L600,18 L700,12 L800,4 L800,100 L0,100 Z" fill="url(#gf)"/>
+      <path id="line" d="M0,90 L100,75 L200,82 L300,55 L400,45 L500,28 L600,18 L700,12 L800,4"
+            stroke="url(#g)" stroke-width="5" fill="none" stroke-linecap="round"
+            stroke-dasharray="1000" stroke-dashoffset="1000"/>
+    </svg>
+  </div>
+
+  <div class="flash" id="flash"></div>
+  <div class="subtitle" id="subtitle"></div>
+</div>
+
+<script>
+const bg = document.getElementById('bg');
+const topbar = document.getElementById('topbar');
+const screen = document.getElementById('screen');
+const num = document.getElementById('num');
+const unit = document.getElementById('unit');
+const label = document.querySelector('.label');
+const curve = document.getElementById('curve');
+const line = document.getElementById('line');
+const flash = document.getElementById('flash');
+const subtitle = document.getElementById('subtitle');
+
+const SUBS = [
+  { t0:0.4,  t1:5.6,  text:'七十七亿元 A 轮融资到账' },
+  { t0:6.0,  t1:10.0, text:'中信联合体领投' },
+  { t0:10.6, t1:16.4, text:'日订单突破三百万' },
+];
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+function ease(t){ return 1-Math.pow(1-t,3); }
+function clamp(x,lo,hi){ return Math.max(lo,Math.min(hi,x)); }
+function win(t,s,e,f){ f=f||0.35;
+  if (t<s||t>e) return 0;
+  return Math.min(1, Math.min((t-s)/f,(e-t)/f));
+}
+
+function update(t){
+  // === 运镜：0–4.5s 推入，4.5–16s 保持 ===
+  if (t < 4.5) {
+    const p = ease(t/4.5);
+    bg.style.transform = `scale(${lerp(1.05,1.65,p)}) translate(${lerp(0,-2,p)}%, ${lerp(0,-10,p)}%)`;
+    bg.style.filter = `blur(${lerp(4,0.5,p)}px) brightness(${lerp(0.45,0.85,p)})`;
+  } else {
+    bg.style.transform = 'scale(1.65) translate(0%,-10%)';
+    bg.style.filter = 'blur(0.5px) brightness(0.85)';
+  }
+
+  // === 顶部标题：1.0–5.5s ===
+  topbar.style.opacity = String(win(t, 1.0, 5.5, 0.5));
+
+  // === 大屏面板：3.0–4.5s 弹入 ===
+  if (t < 3.0) {
+    screen.style.opacity='0'; screen.style.transform='translate(-50%,-50%) scale(0.8)';
+    label.style.opacity='0';
+  } else if (t < 4.5) {
+    const sp = ease((t-3.0)/1.5);
+    const ov = sp<0.7 ? lerp(0.8,1.06,ease(sp/0.7)) : lerp(1.06,1,ease((sp-0.7)/0.3));
+    screen.style.opacity=String(sp);
+    screen.style.transform = `translate(-50%,-50%) scale(${ov})`;
+    label.style.opacity=String(ease(sp));
+  } else {
+    screen.style.opacity='1';
+    screen.style.transform = 'translate(-50%,-50%) scale(1)';
+    label.style.opacity='1';
+  }
+
+  // === 数字 0→77（亿元）：4.5–9.5s ===
+  if (t < 4.5) { num.textContent='0'; unit.textContent='亿元'; }
+  else if (t < 9.5) {
+    num.textContent = String(Math.round(77*ease((t-4.5)/5)));
+    unit.textContent='亿元';
+  } else if (t < 11.5) {
+    num.textContent='77'; unit.textContent='亿元';
+  } else if (t < 11.7) {
+    num.textContent='77'; unit.textContent='亿元';
+    num.style.opacity = String(1 - (t-11.5)/0.2);
+  } else if (t < 12.2) {
+    num.textContent='300'; unit.textContent='万单';
+    num.style.opacity = String((t-11.7)/0.5);
+  } else {
+    num.textContent='300'; unit.textContent='万单'; num.style.opacity='1';
+  }
+
+  // === 红色曲线：8.0–12.0s ===
+  if (t < 8.0) { curve.style.opacity='0'; line.style.strokeDashoffset='1000'; }
+  else if (t < 12.0) {
+    curve.style.opacity='0.9';
+    const lp = ease((t-8.0)/4.0);
+    line.style.strokeDashoffset = String(lerp(1000, 0, lp));
+  } else { curve.style.opacity='0.9'; line.style.strokeDashoffset='0'; }
+
+  // === 终帧闪光：10.5–12.0s ===
+  if (t < 10.5) flash.style.opacity='0';
+  else if (t < 10.55) flash.style.opacity = String(ease((t-10.5)/0.05));
+  else if (t < 10.9) flash.style.opacity = String(lerp(1, 0.4, (t-10.55)/0.35));
+  else if (t < 11.4) flash.style.opacity = String(lerp(0.4, 0.7, (t-10.9)/0.5));
+  else flash.style.opacity='0.15';
+
+  // === 字幕 ===
+  let st=0, txt='';
+  for (const s of SUBS) if (t>=s.t0 && t<=s.t1) { st=win(t,s.t0,s.t1,0.4); txt=s.text; }
+  subtitle.textContent = txt || SUBS[0].text;
+  subtitle.style.opacity = String(st);
+}
+
+window.__update = update;
+update(0);
+</script>
+</body>
+</html>
