@@ -180,7 +180,7 @@ function updateSteps() {
 
 const STEP_LABEL = { script: '剧本', images: '图片', videos: '视频' };
 
-function renderCallout() {
+async function renderCallout() {
   const p = state.current;
   const active = (state.tasks || []).filter(
     (t) => t.project_id === p.id && (t.status === 'pending' || t.status === 'running')
@@ -192,32 +192,65 @@ function renderCallout() {
   const types = [...new Set(active.map((t) => t.type))];
   const label = types.map((t) => STEP_LABEL[t] || t).join(' + ');
   $('calloutTitle').textContent = `已排队：生成${label}`;
+
+  // 拉取生视频规划（预估积分 + 哪些镜用 AI），让提示词精确约束 WorkBuddy
+  let plan = null;
   const vTask = active.find((t) => t.type === 'videos');
-  const route = vTask && vTask.payload && vTask.payload.route;
-  $('calloutDesc').textContent =
-    (route ? `路线：${ROUTE_LABEL[route] || route}。` : '') +
-    '这一步由 WorkBuddy 在对话里执行。复制提示词发给我即可开始。';
-  state.promptText = buildPrompt(types, p);
+  if (vTask) {
+    const route = (vTask.payload && vTask.payload.route) || 'hf';
+    try {
+      plan = await api(`/api/projects/${p.id}/video-plan?route=${encodeURIComponent(route)}`);
+    } catch (e) { plan = null; }
+    // 取不到规划时的兜底（保证提示词不误导）
+    if (!plan) {
+      const remaining = p.scenes.filter((s) => s.image_path && !s.video_path).length;
+      const isAi = route === 'ai';
+      plan = {
+        route,
+        ai_indices: isAi ? p.scenes.filter((s) => s.image_path && !s.video_path).map((s) => s.index) : [],
+        local_indices: isAi ? [] : p.scenes.filter((s) => s.image_path && !s.video_path).map((s) => s.index),
+        ai_count: isAi ? remaining : 0,
+        total: remaining,
+        estimate_low: isAi ? remaining * 50 : 0,
+        estimate_high: isAi ? remaining * 100 : 0,
+      };
+    }
+  }
+  state.videoPlan = plan;
+
+  let desc = '这一步由 WorkBuddy 在对话里执行。复制提示词发给我即可开始。';
+  if (plan) {
+    const est = plan.ai_count > 0
+      ? `预估消耗 ${plan.estimate_low}~${plan.estimate_high} 积分（${plan.ai_count}/${plan.total} 条用模型）。`
+      : '本地渲染，0 积分。';
+    desc = `${ROUTE_LABEL[plan.route] || plan.route}。${est}${desc}`;
+  }
+  $('calloutDesc').textContent = desc;
+  state.promptText = buildPrompt(types, p, plan);
 }
 
 const ROUTE_LABEL = {
-  hf: 'HyperFrames 本地渲染（不消耗积分）',
-  ai: '视频大模型（VideoGen，约 50-100 积分/条）',
-  mix: '混合：重点镜头用视频大模型，其余走本地渲染',
+  hf: 'HyperFrames 本地渲染（0 积分）',
+  ai: '视频大模型（约 50-100 积分/条）',
+  mix: '混合：自动挑镜，仅真实运动镜头用模型',
 };
 
-function buildPrompt(types, p) {
+function buildPrompt(types, p, plan) {
   const nAll = p.scenes.length;
   const nImg = p.scenes.filter((s) => s.image_path).length;
   const nVid = p.scenes.filter((s) => s.video_path).length;
   let videosLine = '';
   if (types.includes('videos')) {
-    const t = (state.tasks || []).find(
-      (x) => x.project_id === p.id && x.type === 'videos' &&
-             (x.status === 'pending' || x.status === 'running')
-    );
-    const r = (t && t.payload && t.payload.route) || 'hf';
-    videosLine = `把【${p.person}】的批量生成视频任务跑完（共 ${nAll - nVid} 条待生成），路线：${ROUTE_LABEL[r] || r}`;
+    const r = (plan && plan.route) || 'hf';
+    if (r === 'hf') {
+      videosLine = `把【${p.person}】的批量生成视频任务跑完（共 ${nAll - nVid} 条待生成），路线：HyperFrames 本地渲染（0 积分）。推/拉/摇/移全部由本地 ffmpeg 完成，**不要调用任何视频大模型**，不要消耗积分。`;
+    } else if (r === 'ai') {
+      videosLine = `把【${p.person}】的批量生成视频任务跑完（共 ${nAll - nVid} 条待生成），路线：视频大模型图生视频（约 ${plan.estimate_low}~${plan.estimate_high} 积分）。每条都用图生视频。`;
+    } else { // mix
+      const aiList = plan.ai_indices.length ? ('第 ' + plan.ai_indices.join('、') + ' 镜') : '无';
+      const localList = plan.local_indices.length ? ('第 ' + plan.local_indices.join('、') + ' 镜') : '无';
+      videosLine = `把【${p.person}】的批量生成视频任务跑完，路线：混合（约 ${plan.estimate_low}~${plan.estimate_high} 积分）。规则：仅对 ${aiList} 使用视频大模型图生视频（这些是真实物理运动，如开车/行走/航拍）；其余 ${localList} 一律用本地渲染（推/拉/摇/移），**不要调用视频大模型、不要消耗积分**。`;
+    }
   }
   const map = {
     script: `为【${p.person}】写一份从出生到死亡的分镜剧本（8-12 个重大事件，每镜含旁白、生图提示词、运镜提示词），并写入工程`,

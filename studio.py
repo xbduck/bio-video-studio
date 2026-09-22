@@ -19,7 +19,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from core import compose, store  # noqa: E402
+from core import compose, store, video_plan  # noqa: E402
 
 
 def _print(data):
@@ -52,15 +52,24 @@ def cmd_pending(args):
             ] if p else []
         elif t["type"] == "videos":
             idxs = t["payload"].get("indices") or []
-            item["route"] = (t["payload"].get("route") or "hf").lower()
+            route = (t["payload"].get("route") or "hf").lower()
+            item["route"] = route
+            vscenes = [
+                s for s in p.get("scenes", [])
+                if (not idxs or s["index"] in idxs) and s.get("image_path") and not s.get("video_path")
+            ] if p else []
+            plan = video_plan.plan_videos(vscenes, route)
+            item["ai_indices"] = plan["ai_indices"]
+            item["local_indices"] = plan["local_indices"]
+            item["estimate_credits"] = [plan["estimate_low"], plan["estimate_high"]]
             item["targets"] = [
                 {"index": s["index"], "title": s.get("title", ""),
                  "video_prompt": s.get("video_prompt", ""),
+                 "use_ai": s["index"] in plan["ai_indices"],
                  "image_file": os.path.join(item["project_dir"],
                                             s["image_path"]) if s.get("image_path") else ""}
-                for s in p.get("scenes", [])
-                if (not idxs or s["index"] in idxs) and s.get("image_path") and not s.get("video_path")
-            ] if p else []
+                for s in vscenes
+            ]
         out.append(item)
     _print(out)
 

@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from core import compose, config, jobs, render, store, tts
+from core import compose, config, jobs, render, store, tts, video_plan
 
 app = FastAPI(title="生平短片工厂", version="1.0")
 
@@ -223,6 +223,22 @@ def api_request_videos(project_id: str, body: GenerateIn):
 @app.get("/api/tasks")
 def api_tasks(limit: int = 30):
     return store.all_tasks(limit)
+
+
+@app.get("/api/projects/{project_id}/video-plan")
+def api_video_plan(project_id: str, route: str = "hf"):
+    """生视频路线规划：返回哪些分镜需要视频大模型、预估积分。
+
+    前端提示卡与 studio.py 命令行共用，保证挑镜规则一致。
+    """
+    p = store.load_project(project_id)
+    if not p:
+        raise HTTPException(404, "项目不存在")
+    route = (route or "hf").strip().lower()
+    if route not in ("hf", "ai", "mix"):
+        route = "hf"
+    scenes = [s for s in p.get("scenes", []) if s.get("image_path") and not s.get("video_path")]
+    return video_plan.plan_videos(scenes, route)
 
 
 # --------------------------------------------------------------------------

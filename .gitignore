@@ -27,3 +27,6 @@ projects/*/bgm.mp3
 
 # HyperFrames 中间产物：assets/bg.png 是 images/ 的拷贝，只保留 index.html 模板入库
 projects/*/hf/*/assets/
+
+# 运行时模型权重（第三方依赖，约 168MB，超 GitHub 单文件 100MB 硬限制，不入库；运行时自行下载/放置）
+models/

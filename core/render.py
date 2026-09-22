@@ -8,19 +8,67 @@ from __future__ import annotations
 import os
 import threading
 
-from . import compose, config, jobs, store, tts
+from . import atmos, compose, config, jobs, store, tts, video_plan
 
 
-def image_to_clip(image_path: str, out_path: str, seconds: float = 5.0) -> tuple[bool, str]:
-    """图片 -> 带缓慢推近效果的视频片段。"""
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+def parse_motion(text: str) -> dict:
+    """从运镜提示词解析本地渲染的运镜类型（仅做相机运动，不做真实物理运动）。
+
+    返回 {"kind": ...}，kind ∈ zoom_in / zoom_out / drift
+      - zoom_in : 缓慢推近（默认，最安全，接近原行为）
+      - zoom_out: 缓慢拉远（揭示更多环境）
+      - drift   : 固定微放大 + 缓慢正弦平移（手持/呼吸感，适合「摇/移/平移/凝视」）
+    """
+    t = (text or "").lower()
+    if any(k in t for k in ("推", "拉近", "推进", "向前", "zoom in", "近景", "特写")):
+        return {"kind": "zoom_in"}
+    if any(k in t for k in ("拉", "拉远", "退远", "拉开", "后退", "zoom out", "远景", "全景")):
+        return {"kind": "zoom_out"}
+    if any(k in t for k in ("摇", "移", "平移", "横移", "手持", "缓慢", "凝视", "漂移", "晃动")):
+        return {"kind": "drift"}
+    # 没有明确相机运动，但含真实运动词（飞驰/行走/航拍）→ drift 增加一点动感
+    if any(k in t for k in video_plan.AI_MOTION_KEYWORDS):
+        return {"kind": "drift"}
+    # 默认：缓慢推近（带一点漂移让其「活」起来）
+    return {"kind": "zoom_in"}
+
+
+def _zoompan_clip(image_path: str, out_path: str, seconds: float,
+                  motion: dict) -> tuple[bool, str]:
+    """纯 2D 相机运动（Ken Burns）。作为视差渲染不可用时的兜底。"""
     frames = max(30, int(seconds * compose.FPS))
+    kind = motion.get("kind", "zoom_in")
+
+    # 先放大到 2K 再裁切，给运镜留足余量
+    base = "scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,"
+
+    if kind == "zoom_in":
+        z0, z1 = 1.0, 1.18
+    elif kind == "zoom_out":
+        z0, z1 = 1.18, 1.0
+    else:  # drift：固定微放大 + 缓慢平移
+        z0 = z1 = 1.12
+
+    fd = max(2, frames - 1)
+    sm = (f"(min(1,on/{fd}))*(min(1,on/{fd}))*(3-2*(min(1,on/{fd})))")
+    zexpr = f"lerp({z0},{z1},{sm})"
+
+    if kind == "drift":
+        period = max(2, frames // 3)
+        xexpr = f"iw/2-(iw/zoom/2)+sin(on/{period}*6.2831)*0.045*iw"
+        yexpr = f"ih/2-(ih/zoom/2)+cos(on/{period}*6.2831)*0.040*ih"
+    else:
+        xexpr = "iw/2-(iw/zoom/2)"
+        yexpr = "ih/2-(ih/zoom/2)"
+
     vf = (
-        "scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,"
-        f"zoompan=z='min(zoom+0.0012,1.25)':d={frames}"
-        f":x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
-        f":s={compose.WIDTH}x{compose.HEIGHT}:fps={compose.FPS},"
-        f"trim=duration={seconds:.2f},setpts=PTS-STARTPTS"
+        base
+        + f"zoompan=z='{zexpr}'"
+        + f":x='{xexpr}'"
+        + f":y='{yexpr}'"
+        + f":d={frames}"
+        + f":s={compose.WIDTH}x{compose.HEIGHT}:fps={compose.FPS}"
+        + f",trim=duration={seconds:.2f},setpts=PTS-STARTPTS"
     )
     return compose._run([
         "-loop", "1", "-i", image_path,
@@ -29,6 +77,100 @@ def image_to_clip(image_path: str, out_path: str, seconds: float = 5.0) -> tuple
         "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
         out_path,
     ])
+
+
+def _cinematic_clip(image_path: str, out_path: str, seconds: float,
+                    motion: dict) -> tuple[bool, str]:
+    """整图电影感运镜 + 氛围动态层（本地 ffmpeg 渲染，0 积分）。
+
+    分三层叠加：
+      - 主运镜：推近 / 拉远（smoothstep 缓动）+ 低频平移 + 高频微抖（手持的不完美感）
+      - 氛围层：柔和光晕缓慢漂移 + 稀疏浮尘浮动（画面里真的有元素在动）
+      - 调色层：胶片颗粒 + 光影呼吸 + 暗角 + 微增饱和对比
+
+    不做前背景分离 —— 多人/复杂场景抠图会在背景残留人物轮廓形成
+    「灵魂出窍」式重影，已实测否决（详见 CHANGELOG 2026-09-17）。
+    """
+    W, H, FPS = compose.WIDTH, compose.HEIGHT, compose.FPS
+    N = max(30, int(seconds * FPS))
+    FD = max(2, N - 1)
+    sm = f"(min(1,on/{FD}))*(min(1,on/{FD}))*(3-2*(min(1,on/{FD})))"
+    kind = (motion or {}).get("kind", "zoom_in")
+
+    if kind == "zoom_out":
+        zexpr = f"lerp(1.08,1.0,{sm})"
+    elif kind == "drift":
+        zexpr = "1.05"
+    else:
+        zexpr = f"lerp(1.0,1.08,{sm})"
+
+    # 低频漂移周期（慢，营造推轨感）+ 高频微抖（手持呼吸，振幅约 1.5px @1080p）
+    D1 = max(30, int(seconds * FPS * 1.6))
+    amp = 1.0 if kind == "drift" else 0.6
+    xexpr = (f"iw/2-(iw/zoom/2)+{0.007 * amp:.4f}*iw*sin(on/{D1}*6.2831)"
+             f"+1.8*sin(on/2.7*6.2831)")
+    yexpr = (f"ih/2-(ih/zoom/2)+{0.006 * amp:.4f}*ih*cos(on/{D1}*6.2831)"
+             f"+1.4*cos(on/3.3*6.2831)")
+
+    cache_dir = os.path.dirname(out_path)
+    layers = atmos.ensure_layers(cache_dir, W, H)
+    dw, dh = layers["dust_size"]
+    fw, fh = layers["flare_size"]
+    # 摆幅留出余量，保证叠加层始终盖满画面（不会露边）
+    fx = max(10, (fw - W) // 2 - 20)
+    fy = max(10, (fh - H) // 2 - 18)
+    dxa = max(8, (dw - W) // 2 - 14)
+    dya = max(8, (dh - H) // 2 - 10)
+
+    vf = (
+        f"[0:v]scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,"
+        f"zoompan=z='{zexpr}':x='{xexpr}':y='{yexpr}'"
+        f":d={N}:s={W}x{H}:fps={FPS},setsar=1[base];"
+        f"[2:v]format=rgba,fps={FPS}[flare];"
+        f"[1:v]format=rgba,fps={FPS}[dust];"
+        # 光晕：缓慢横移 + 轻微起伏
+        f"[base][flare]overlay="
+        f"x='(W-w)/2+{fx}*sin(t/11*6.2831)'"
+        f":y='(H-h)/2+{fy}*cos(t/13*6.2831)':eval=frame[o1];"
+        # 浮尘：更慢的漂移（周期长，观感接近缓慢浮动）
+        f"[o1][dust]overlay="
+        f"x='(W-w)/2+{dxa}*sin(t/17*6.2831)'"
+        f":y='(H-h)/2+{dya}*cos(t/23*6.2831)':eval=frame[o2];"
+        # 胶片颗粒 + 光影呼吸 + 调色
+        f"[o2]noise=alls=6:allf=t+u,"
+        f"eq=brightness='0.014*sin(t/2.6)':saturation=1.07:contrast=1.05:eval=frame,"
+        f"vignette=PI/4:0.26[out]"
+    )
+    return compose._run([
+        "-loop", "1", "-framerate", str(FPS), "-i", image_path,
+        "-loop", "1", "-framerate", str(FPS), "-i", layers["dust"],
+        "-loop", "1", "-framerate", str(FPS), "-i", layers["flare"],
+        "-filter_complex", vf,
+        "-map", "[out]",
+        "-t", f"{seconds:.2f}",
+        "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
+        out_path,
+    ])
+
+
+def image_to_clip(image_path: str, out_path: str, seconds: float = 6.0,
+                  motion: dict | None = None) -> tuple[bool, str]:
+    """图片 -> 电影感视频片段（本地 ffmpeg 渲染，0 积分）。
+
+    主路线：整图电影运镜 + 氛围动态层（光晕 / 浮尘）+ 胶片颗粒 + 暗角调色。
+    不做前背景分离（多人场景抠图会产生「灵魂出窍」式重影，已实测否决）。
+    片段时长上限 10s，交由 compose.build_scene_clip 平滑慢放填满旁白，
+    既保证镜头连续（不定格），又避免长时段逐帧 zoompan 过慢。
+    """
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    motion = motion or parse_motion("")
+    seconds = max(2.0, min(float(seconds), 10.0))
+
+    ok, err = _cinematic_clip(image_path, out_path, seconds, motion)
+    if ok:
+        return True, ""
+
+    return _zoompan_clip(image_path, out_path, seconds, motion)
 
 
 def _estimate_duration(text: str) -> float:
@@ -94,22 +236,27 @@ def render_project(project_id: str, with_title: bool = True, with_bgm: bool = Tr
     for i, s in enumerate(usable):
         jobs.update(job_id, 70 + int((i + 1) / total * 25), f"合成片段 {i+1}/{len(usable)}")
 
-        # 视频源：优先 AI 视频，否则图片推近
-        src_video = s["_vid"]
-        if not src_video:
-            kb = os.path.join(clips_dir, f"{s['index']:02d}_kb.mp4")
-            if not os.path.exists(kb):
-                ok, err = image_to_clip(s["_img"], kb, seconds=6.0)
-                if not ok:
-                    continue
-            src_video = kb
-
-        # 时长：以旁白为准，留 0.6s 尾白
+        # 时长：以旁白为准，留 0.6s 尾白（上限 20s）
         if s["_audio"]:
             dur = compose.probe_duration(s["_audio"]) + 0.6
         else:
             dur = _estimate_duration(s.get("narration", "")) + 0.6
         dur = min(dur, 20.0)
+
+        # 视频源：优先 AI 视频，否则图片推近。
+        # 本地运镜视频时长与旁白对齐（seconds=dur），保证 ratio≈1，
+        # 避免 build_scene_clip 因短视频触发 tpad 定格导致片段后段静止。
+        src_video = s["_vid"]
+        if not src_video:
+            kb = os.path.join(clips_dir, f"{s['index']:02d}_kb.mp4")
+            if not os.path.exists(kb):
+                ok, err = image_to_clip(
+                    s["_img"], kb, seconds=dur,
+                    motion=parse_motion(s.get("video_prompt", "")),
+                )
+                if not ok:
+                    continue
+            src_video = kb
 
         ass_path = os.path.join(subs_dir, f"{s['index']:02d}.ass")
         compose.build_ass([(0.0, dur, s.get("narration", ""))], ass_path)
