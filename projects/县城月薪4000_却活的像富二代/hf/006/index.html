@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920" />
+<title>{{TITLE}}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:1080px; height:1920px; overflow:hidden;
+    background:#0b0b0f;
+    font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage { position:relative; width:100%; height:100%; }
+
+  /* 背景 */
+  .bg {
+    position:absolute; inset:0;
+    background:
+      radial-gradient(120% 60% at 50% 0%, rgba(255,200,100,0.18), transparent 55%),
+      radial-gradient(120% 70% at 20% 100%, rgba(220,60,60,0.22), transparent 60%),
+      linear-gradient(160deg, var(--c1) 0%, var(--c2) 100%);
+  }
+  .noise {
+    position:absolute; inset:0; opacity:0.08; pointer-events:none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode:overlay;
+  }
+  .vignette {
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.55) 100%);
+  }
+
+  /* 通用入场容器 */
+  .enter { opacity:0; }
+
+  /* 顶部系列标签 */
+  .series {
+    position:absolute; top:76px; left:0; right:0; text-align:center;
+    font-size:40px; font-weight:800; letter-spacing:0.36em;
+    color:#ffe082; text-shadow:0 4px 22px rgba(0,0,0,0.6);
+  }
+  .episode {
+    position:absolute; top:132px; left:0; right:0; text-align:center;
+    font-size:26px; font-weight:600; letter-spacing:0.18em; color:rgba(255,255,255,0.75);
+  }
+
+  /* 封面大字标题 */
+  .cover-title {
+    position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+    width:86%; text-align:center;
+    padding:42px 36px; border-radius:32px;
+    background:rgba(0,0,0,0.62);
+    box-shadow:0 28px 80px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.08);
+  }
+  .cover-title .main {
+    display:inline-block; width:100%;
+    font-size:86px; font-weight:900; line-height:1.18; color:#fff;
+    text-shadow:0 4px 18px rgba(0,0,0,0.75), 0 0 70px rgba(255,160,80,0.22);
+    letter-spacing:0.02em;
+    word-break:break-word; overflow-wrap:anywhere;
+  }
+  .cover-title .sub {
+    margin-top:38px; font-size:34px; font-weight:500; line-height:1.5;
+    color:rgba(255,255,255,0.82); text-shadow:0 4px 18px rgba(0,0,0,0.5);
+  }
+
+  /* 封面背景大图 */
+  .cover-bg {
+    position:absolute; inset:0;
+    background-size:cover; background-position:center; background-repeat:no-repeat;
+    opacity:0.58;
+  }
+  .cover-bg::after {
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.50));
+  }
+
+  /* meme 人物占位区 */
+  .mascot {
+    position:absolute; left:50%; bottom:210px; transform:translateX(-50%);
+    width:480px; height:480px;
+  }
+  .mascot::before {
+    content:""; position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+    width:430px; height:430px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,210,122,0.22), rgba(255,210,122,0) 62%);
+    box-shadow:0 0 0 2px rgba(255,210,122,0.35) inset, 0 0 0 22px rgba(255,210,122,0.08) inset;
+    border:2px dashed rgba(255,255,255,0.18);
+  }
+  .mascot > * { position:relative; }
+  .mascot img, .mascot svg, .mascot .svg-hero, .mascot .emoji-hero {
+    width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 20px 50px rgba(0,0,0,0.45));
+  }
+  .mascot .emoji-hero { font-size:280px; line-height:480px; text-align:center; }
+
+  /* 通用视觉容器 */
+  .emoji-hero {
+    display:flex; align-items:center; justify-content:center;
+    font-size:240px; line-height:1;
+    filter:drop-shadow(0 18px 40px rgba(0,0,0,0.5));
+  }
+  .svg-hero, .svg-hero svg { width:100%; height:100%; }
+  .scene-img .emoji-hero { font-size:300px; }
+  .scene-img .svg-hero svg { width:100%; height:100%; object-fit:cover; border-radius:32px; }
+
+  /* 金句装饰 */
+  .quote-deco { width:240px; height:170px; margin:0 auto 18px; opacity:0.9; }
+  .quote-deco .svg-hero svg { width:100%; height:100%; }
+
+  /* 结算英雄图 */
+  .end-hero { width:360px; height:360px; margin:0 auto 28px; }
+  .end-hero .emoji-hero { font-size:240px; }
+  .end-hero .svg-hero svg { width:100%; height:100%; }
+
+  /* 作者署名 */
+  .author {
+    position:absolute; left:0; right:0; bottom:58px; text-align:center;
+    font-size:28px; font-weight:600; letter-spacing:0.12em; color:rgba(255,255,255,0.58);
+  }
+
+  /* scene 卡布局 */
+  .scene-wrap {
+    position:absolute; inset:0; padding:150px 70px 120px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .scene-heading {
+    position:absolute; top:84px; left:70px;
+    font-size:32px; font-weight:800; letter-spacing:0.18em; color:#ffe082;
+    text-shadow:0 3px 14px rgba(0,0,0,0.55);
+  }
+  .scene-img {
+    width:780px; height:540px; border-radius:36px;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    box-shadow:0 28px 80px rgba(0,0,0,0.5);
+  }
+  .scene-img img, .scene-img svg {
+    width:100%; height:100%; object-fit:cover;
+  }
+  .scene-textbox {
+    margin-top:54px; width:100%; text-align:center;
+  }
+  .scene-text {
+    font-size:54px; font-weight:800; line-height:1.35; color:#fff;
+    text-shadow:0 5px 26px rgba(0,0,0,0.6);
+    word-break:break-word; overflow-wrap:anywhere;
+  }
+  .scene-sub {
+    margin-top:22px; font-size:30px; font-weight:500; line-height:1.45;
+    color:rgba(255,255,255,0.74); text-shadow:0 3px 16px rgba(0,0,0,0.45);
+  }
+
+  /* 金句卡 */
+  .quote-wrap {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:84%; text-align:center;
+  }
+  .quote-text {
+    font-size:80px; font-weight:900; line-height:1.22; color:#fff;
+    text-shadow:0 8px 36px rgba(0,0,0,0.65), 0 0 70px rgba(255,200,120,0.18);
+    word-break:break-word; overflow-wrap:anywhere;
+  }
+  .quote-sub {
+    margin-top:34px; font-size:34px; color:rgba(255,255,255,0.76);
+  }
+
+  /* end 结算卡 */
+  .end-wrap {
+    position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+    width:86%; text-align:center;
+  }
+  .end-main {
+    font-size:78px; font-weight:900; line-height:1.22; color:#fff;
+    text-shadow:0 8px 34px rgba(0,0,0,0.62);
+    word-break:break-word; overflow-wrap:anywhere;
+  }
+  .end-sub {
+    margin-top:40px; font-size:34px; font-weight:600; color:#ffe082;
+    text-shadow:0 4px 20px rgba(0,0,0,0.55);
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="bg" id="bg"></div>
+  <div class="noise"></div>
+  <div class="vignette"></div>
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+window.__SCENE__ = {"type": "quote", "series": "今日副本", "episode": "EP.01", "title": "县城月薪4000，却活的像富二代", "sub": "", "heading": "金句", "text": "在大城市，四千是生存线；\n在小县城，四千是零花钱。", "author": "二狗君", "color": ["#2a0a0a", "#0f0505"], "image": "image.jpg", "emoji": ""};
+
+const MASCOT_SVG = `<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ffcc80" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#ffcc80" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="200" cy="360" rx="120" ry="22" fill="#000" opacity="0.25"/>
+  <circle cx="200" cy="160" r="110" fill="#ffe0bd"/>
+  <path d="M120 160 Q110 80 200 70 Q290 80 280 160" fill="#1a1a1a"/>
+  <path d="M150 140 L250 140 L240 170 L160 170 Z" fill="#111"/>
+  <rect x="145" y="142" width="110" height="30" rx="10" fill="#000" opacity="0.9"/>
+  <path d="M150 150 L190 158 M210 158 L250 150" stroke="#fff" stroke-width="2" opacity="0.35"/>
+  <path d="M145 200 Q200 250 255 200" stroke="#000" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M175 220 Q200 235 225 220" stroke="#d84343" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M120 280 Q90 320 140 340" fill="none" stroke="#1a1a1a" stroke-width="26" stroke-linecap="round"/>
+  <path d="M280 280 Q310 320 260 340" fill="none" stroke="#1a1a1a" stroke-width="26" stroke-linecap="round"/>
+  <path d="M155 330 Q200 360 245 330" stroke="#1a1a1a" stroke-width="18" fill="none" stroke-linecap="round"/>
+  <ellipse cx="280" cy="195" rx="45" ry="12" fill="#fff" opacity="0.12" transform="rotate(-20 280 195)"/>
+  <path d="M250 180 L320 150 L310 200 Z" fill="#ffd700" opacity="0.9"/>
+  <path d="M318 150 Q340 145 330 165 Q335 185 310 200" fill="#e6c200"/>
+  <path d="M245 185 L315 155" stroke="#fff" stroke-width="3" opacity="0.5"/>
+</svg>`;
+
+// 封面：副本传送门（装饰，置于人物身后）
+const COVER_PORTAL_SVG = `<svg viewBox="0 0 480 480" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="pg" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#ffd27a" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#ffd27a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="240" cy="210" r="205" fill="url(#pg)"/>
+  <circle cx="240" cy="210" r="172" fill="none" stroke="#ffd27a" stroke-width="3" opacity="0.5"/>
+  <circle cx="240" cy="210" r="150" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.25" stroke-dasharray="5 11"/>
+  <polygon points="240,82 371,156 371,304 240,378 109,304 109,156" fill="none" stroke="#ffd27a" stroke-width="2.5" opacity="0.6"/>
+</svg>`;
+
+// 剧情卡：风景/人生时刻插画
+const SCENE_SVG = `<svg viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a2a5a"/><stop offset="100%" stop-color="#160e2c"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" fill="url(#sky)"/>
+  <circle cx="470" cy="150" r="58" fill="#ffd27a" opacity="0.92"/>
+  <path d="M0 430 L150 300 L280 410 L420 280 L640 430 L640 640 L0 640 Z" fill="#000" opacity="0.32"/>
+  <path d="M0 505 L180 385 L340 485 L500 365 L640 485 L640 640 L0 640 Z" fill="#000" opacity="0.5"/>
+  <path d="M320 640 Q300 540 320 470 Q340 400 320 360" stroke="#ffd27a" stroke-width="6" fill="none" opacity="0.7" stroke-dasharray="2 18" stroke-linecap="round"/>
+  <circle cx="200" cy="430" r="11" fill="#ffd27a" opacity="0.85"/>
+  <circle cx="450" cy="452" r="8" fill="#ffd27a" opacity="0.8"/>
+</svg>`;
+
+// 金句卡：引号装饰
+const QUOTE_SVG = `<svg viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg">
+  <text x="6" y="165" font-size="200" fill="#ffd27a" opacity="0.22" font-family="Georgia, serif" font-weight="bold">&#8220;</text>
+</svg>`;
+
+// 结算卡：通关奖章
+const END_SVG = `<svg viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="320" cy="300" r="156" fill="none" stroke="#ffd27a" stroke-width="4" opacity="0.7"/>
+  <circle cx="320" cy="300" r="124" fill="rgba(255,210,122,0.12)"/>
+  <polygon points="320,178 342,272 438,272 360,332 388,420 320,362 252,420 280,332 202,272 298,272" fill="#ffd27a" opacity="0.85"/>
+  <path d="M278 300 L310 336 L368 270" stroke="#160e2c" stroke-width="15" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+function setColors(c1, c2) {
+  document.getElementById('bg').style.setProperty('--c1', c1 || '#2a0a0a');
+  document.getElementById('bg').style.setProperty('--c2', c2 || '#0f0505');
+}
+
+function fallbackFor(type) {
+  if (type === 'scene') return SCENE_SVG;
+  if (type === 'quote') return QUOTE_SVG;
+  if (type === 'end') return END_SVG;
+  return COVER_PORTAL_SVG;
+}
+
+function imageHtml(src, fallback, cls) {
+  if (!src) return `<div class="${cls}">${fallback}</div>`;
+  const s = src.trim();
+  if (s.startsWith('<svg')) return `<div class="${cls}">${s}</div>`;
+  if (/\.(png|jpe?g|gif|webp|svg|bmp)(\?.*)?$/i.test(s) || s.startsWith('http') || s.startsWith('data:')) {
+    return `<img src="${s}" alt="" class="${cls}" onerror="this.parentNode.innerHTML='${fallback.replace(/'/g,"\\'")}'"/>`;
+  }
+  return `<div class="${cls}">${fallback}</div>`;
+}
+
+// 视觉决策：image > emoji > 内置 SVG（fb 可覆盖按类型默认的 SVG）
+function visualHtml(S, fb) {
+  const fallback = fb || fallbackFor(S.type);
+  if (S.image && S.image.trim()) return imageHtml(S.image, fallback, '');
+  if (S.emoji && S.emoji.trim()) return `<div class="emoji-hero">${S.emoji}</div>`;
+  return `<div class="svg-hero">${fallback}</div>`;
+}
+
+function renderScene(S) {
+  const stage = document.getElementById('content');
+  setColors(S.color && S.color[0], S.color && S.color[1]);
+
+  if (S.type === 'cover') {
+    const img = S.image && S.image.trim();
+    const bg = img ? `<div class="cover-bg" id="s0" style="background-image:url('${img.replace(/'/g,"\\'")}')"></div>` : '';
+    const mascot = img ? '' :
+      `<div class="mascot enter" id="s4">${visualHtml(S, MASCOT_SVG)}</div>`;
+    stage.innerHTML = `
+      ${bg}
+      <div class="series enter" id="s1">${S.series || '今日副本'}</div>
+      <div class="episode enter" id="s2">${S.episode || ''}</div>
+      <div class="cover-title enter" id="s3">
+        <div class="main">${(S.title || '').replace(/\n/g,'<br>')}</div>
+        ${S.sub ? `<div class="sub">${S.sub}</div>` : ''}
+      </div>
+      ${mascot}
+      <div class="author enter" id="s5">@${S.author || ''}</div>
+    `;
+  } else if (S.type === 'quote') {
+    stage.innerHTML = `
+      <div class="scene-heading enter" id="s1">${S.heading || '金句'}</div>
+      <div class="quote-wrap enter" id="s2">
+        <div class="quote-deco">${S.emoji ? `<div class="emoji-hero">${S.emoji}</div>` : `<div class="svg-hero">${QUOTE_SVG}</div>`}</div>
+        <div class="quote-text">${(S.text || '').replace(/\n/g,'<br>')}</div>
+        ${S.sub ? `<div class="quote-sub">${S.sub}</div>` : ''}
+      </div>
+    `;
+  } else if (S.type === 'end') {
+    stage.innerHTML = `
+      <div class="scene-heading enter" id="s1">${S.heading || '副本结算'}</div>
+      <div class="end-wrap enter" id="s2">
+        <div class="end-hero">${visualHtml(S, END_SVG)}</div>
+        <div class="end-main">${(S.text || '').replace(/\n/g,'<br>')}</div>
+        ${S.sub ? `<div class="end-sub">${S.sub}</div>` : ''}
+      </div>
+    `;
+  } else {
+    stage.innerHTML = `
+      <div class="scene-heading enter" id="s1">${S.heading || ''}</div>
+      <div class="scene-wrap enter" id="s2">
+        <div class="scene-img">${visualHtml(S, SCENE_SVG)}</div>
+        <div class="scene-textbox">
+          <div class="scene-text">${(S.text || '').replace(/\n/g,'<br>')}</div>
+          ${S.sub ? `<div class="scene-sub">${S.sub}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+}
+
+function ease(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2; }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+let E = 0.85;
+window.__update = function(t) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('s' + i);
+    if (!el) continue;
+    const delay = (i - 1) * 0.10;
+    const kk = ease(clamp((t - delay) / (E * 0.80), 0, 1));
+    el.style.opacity = kk.toFixed(4);
+  }
+};
+
+if (typeof window.__SCENE__ !== 'undefined') renderScene(window.__SCENE__);
+</script>
+</body>
+</html>

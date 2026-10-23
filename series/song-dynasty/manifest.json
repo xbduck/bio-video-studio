@@ -1,0 +1,20 @@
+{
+  "slug": "song-dynasty",
+  "series": "睡觉听历史",
+  "topic": "大宋三百年：繁华与落日",
+  "defaults": {
+    "voice": "zh-CN-YunjianNeural",
+    "rate": "-50%",
+    "bgm": "",
+    "bgm_volume": 0.1
+  },
+  "episodes": [
+    { "id": "EP.01", "file": "ep01.json", "note": "开国：陈桥兵变与杯酒释兵权" },
+    { "id": "EP.02", "file": "ep02.json", "note": "澶渊之盟：花钱买来的和平" },
+    { "id": "EP.03", "file": "ep03.json", "note": "王安石变法：一场超前实验" },
+    { "id": "EP.04", "file": "ep04.json", "note": "风雅宋：词、画、茶、瓷" },
+    { "id": "EP.05", "file": "ep05.json", "note": "靖康之变：最富的王朝最屈辱的一夜" },
+    { "id": "EP.06", "file": "ep06.json", "note": "南渡与偏安：岳飞必须死" },
+    { "id": "EP.07", "file": "ep07.json", "note": "崖山：十万人的最后一战" }
+  ]
+}

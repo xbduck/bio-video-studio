@@ -1,0 +1,18 @@
+{
+  "slug": "_template",
+  "series": "睡觉听历史",
+  "topic": "在这里写系列主题（如：宋朝十八帝 / 世界史十大转折）",
+  "defaults": {
+    "voice": "zh-CN-YunjianNeural",
+    "rate": "-50%",
+    "bgm": "",
+    "bgm_volume": 0.1
+  },
+  "episodes": [
+    {
+      "id": "EP.01",
+      "file": "ep01.json",
+      "note": "复制这个文件改内容；要加集就再加一行 {id, file, note}"
+    }
+  ]
+}

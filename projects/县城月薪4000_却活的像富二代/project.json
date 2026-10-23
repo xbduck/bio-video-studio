@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "title": "县城月薪4000，却活的像富二代",
+    "series": "今日副本",
+    "episode": "EP.01",
+    "author": "二狗君",
+    "voice": "zh-CN-YunxiNeural",
+    "bgm": "",
+    "bgm_volume": 0.18
+  },
+  "scenes": [
+    {
+      "type": "cover",
+      "heading": "今日副本",
+      "text": "县城月薪4000\n却活的像富二代",
+      "sub": "今日解锁：小县城的财务自由密码",
+      "image_query": "small chinese county town street"
+    },
+    {
+      "type": "scene",
+      "heading": "我叫阿强",
+      "text": "我今年二十六，在老家县城一家事业单位上班，月薪四千。工资不高，但够花。",
+      "sub": "县城青年的普通一天",
+      "image_query": "Chinese government office building"
+    },
+    {
+      "type": "scene",
+      "heading": "家底",
+      "text": "父母是本地人，国企退休，名下一套房、一间商铺，车是全款买的。我没有房贷，也没有车贷。",
+      "sub": "这大概就是传说中的原生家庭buff",
+      "image_query": "Chinese residential apartment building"
+    },
+    {
+      "type": "scene",
+      "heading": "通勤",
+      "text": "每天早上八点半，我骑那辆买了三年的电动车，十分钟到单位。不挤地铁，也不赶早高峰。",
+      "sub": "通勤时间：一首歌的长度",
+      "image_query": "electric bicycle city street"
+    },
+    {
+      "type": "scene",
+      "heading": "午饭",
+      "text": "中午在单位食堂，两荤一素六块钱，阿姨打菜手从来不抖。楼下牛肉面馆，加蛋加肠也才十二块。",
+      "sub": "吃饱，是县城最便宜的幸福",
+      "image_query": "beef noodle soup bowl"
+    },
+    {
+      "type": "quote",
+      "heading": "金句",
+      "text": "在大城市，四千是生存线；\n在小县城，四千是零花钱。",
+      "image_query": "Chinese city night street lights"
+    },
+    {
+      "type": "scene",
+      "heading": "收支",
+      "text": "工资到账四千，房租零，车贷零，房贷零。我妈说，钱你留着花，家里不缺。",
+      "sub": "每月现金流：正向且轻松",
+      "image_query": "Chinese family having dinner"
+    },
+    {
+      "type": "scene",
+      "heading": "下班",
+      "text": "下班早，六点就能到家。周末基本不加班，朋友在群里喊一声，烧烤摊走起。",
+      "sub": "时间，是县城最便宜的东西",
+      "image_query": "barbecue grill street food"
+    },
+    {
+      "type": "scene",
+      "heading": "烧烤",
+      "text": "我们这儿烧烤便宜，三四十块两个人能吃到撑。啤酒三块一瓶，老板还认识你，多送两串。",
+      "sub": "熟人社会的小确幸",
+      "image_query": "beer bottles on table"
+    },
+    {
+      "type": "scene",
+      "heading": "攒钱",
+      "text": "每个月我给自己留一千五零花，剩下的全存起来。一年下来，居然攒了两万块。",
+      "sub": "没有大开销，存钱其实不难",
+      "image_query": "piggy bank savings money"
+    },
+    {
+      "type": "scene",
+      "heading": "旅行",
+      "text": "去年用攒的钱，带我妈去了趟三亚。机票酒店全包，那是她这辈子第一次看见海。",
+      "sub": "把钱花在妈妈身上，最值",
+      "image_query": "Sanya beach tropical ocean"
+    },
+    {
+      "type": "scene",
+      "heading": "朋友",
+      "text": "我一个朋友在北京，月薪两万，房租六千，通勤两小时，年底一算存款是负数。",
+      "sub": "高薪不等于富有",
+      "image_query": "crowded subway train Beijing"
+    },
+    {
+      "type": "scene",
+      "heading": "对比",
+      "text": "他问我羡不羡慕他，我说不。我羡慕的是他见过的世界，不是他熬的那些夜。",
+      "sub": "各有各的活法",
+      "image_query": "city skyline night lights"
+    },
+    {
+      "type": "quote",
+      "heading": "金句",
+      "text": "富二代不是生来有钱，\n是有人替你扛住了生活的重量。",
+      "image_query": "family walking together park"
+    },
+    {
+      "type": "scene",
+      "heading": "烦恼",
+      "text": "县城也有县城的烦，机会少、圈子小，过年回来还得被七大姑八大姨催婚。",
+      "sub": "没有完美的活法",
+      "image_query": "small town street alley"
+    },
+    {
+      "type": "scene",
+      "heading": "算账",
+      "text": "但我算过一笔账：时薪、通勤、压力、能不能陪在父母身边，综合来看，我不一定输。",
+      "sub": "生活质量，不能只看工资条",
+      "image_query": "person writing notebook calculator"
+    },
+    {
+      "type": "scene",
+      "heading": "结尾",
+      "text": "不是每个人都要去大城市卷。能按自己的节奏活，本身就是一种富二代。",
+      "sub": "今日副本已通关",
+      "image_query": "person relaxing sunset field"
+    },
+    {
+      "type": "end",
+      "heading": "副本结算",
+      "text": "今日体验已解锁：\n县城月薪4000，却活的像富二代。",
+      "sub": "关注我，明天你想活成谁？",
+      "image_query": "trophy award golden"
+    }
+  ]
+}

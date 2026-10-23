@@ -16,7 +16,10 @@
       <p>输入一个人物名 → 剧本 → 分镜图 → 分镜视频 → 配音字幕 → 成片</p>
     </div>
   </div>
-  <div class="topbar-right">
+  <div class="topbar-right" style="display:flex;align-items:center;gap:8px">
+    <a class="btn small" href="/">生平短片</a>
+    <a class="btn small" href="/series">系列工厂</a>
+    <a class="btn small" href="/culture/">企业文化</a>
     <span id="health" class="health"></span>
   </div>
 </header>
@@ -108,7 +111,19 @@
 
       <!-- 设置行 -->
       <div class="settings">
-        <label>旁白音色
+        <label title="项目级：决定合成画布尺寸与字幕版式。竖屏 1080×1920 发短视频；横屏 1920×1080 用于企业宣传片 / 大屏 / 手机横屏">画面
+          <select id="aspectSel">
+            <option value="portrait">竖屏 9:16（1080×1920）</option>
+            <option value="landscape">横屏 16:9（1920×1080）</option>
+          </select>
+        </label>
+        <label title="分镜视频已自带字幕 / 不需要字幕时选「不启用」，直接透传视频原画面，避免双层字幕">字幕
+          <select id="subSel">
+            <option value="1">启用（烧录自配旁白字幕）</option>
+            <option value="0">不启用（视频自带 / 无字幕）</option>
+          </select>
+        </label>
+        <label title="选「不使用」时保留每条分镜视频自带的音轨（AI 视频自带配音的场景用）">旁白音色
           <select id="voiceSel"></select>
         </label>
         <label>语速
@@ -117,6 +132,9 @@
             <option value="+0%" selected>正常</option>
             <option value="+10%">稍快</option>
           </select>
+        </label>
+        <label title="分镜底部若带「豆包 AI 生成」等水印条，填像素数先裁掉再铺满画布；0 = 不裁">底部裁切
+          <input id="cropBottom" type="number" min="0" max="400" step="10" value="0">
         </label>
         <label class="hot" title="点「批量生视频」时按这里选的方式执行">生视频方式
           <select id="videoRoute">
@@ -147,6 +165,7 @@
       <div class="scenes-head">
         <h3>分镜剧本</h3>
         <div class="scenes-actions">
+          <button id="btnFramesFromVideos" class="btn small" title="给所有「有视频但没图」的分镜各抽一帧，补成分镜图（视频由外部工具生成时用）">全部从视频截帧</button>
           <button id="btnAddScene" class="btn small">+ 加分镜</button>
           <button id="btnSaveScenes" class="btn small primary">保存剧本</button>
         </div>
@@ -187,6 +206,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="app.js"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

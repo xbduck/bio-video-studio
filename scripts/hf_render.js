@@ -43,8 +43,8 @@ async function renderScene(browser, item, ffmpeg) {
   const page = await browser.newPage();
   await page.setViewport({ width: 1080, height: 1920, deviceScaleFactor: 1 });
   await page.goto('file://' + path.resolve(item.html), { waitUntil: 'load' });
-  // 等字体/布局稳定
-  await new Promise(r => setTimeout(r, 120));
+  // 等字体/布局/本地图片稳定（大图需要更久）
+  await new Promise(r => setTimeout(r, 280));
 
   for (let i = 0; i < FRAMES; i++) {
     const t = i / FPS;
@@ -74,8 +74,8 @@ async function renderScene(browser, item, ffmpeg) {
   ];
   run(ffmpeg, args);
 
-  // 清理帧
-  try { fs.rmSync(frameDir, { recursive: true, force: true }); } catch (e) {}
+  // 保留帧目录，避免单场景 25 个文件批量删除触发安全确认；后续可手工清理。
+  // try { fs.rmSync(frameDir, { recursive: true, force: true }); } catch (e) {}
 }
 
 async function main() {

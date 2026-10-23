@@ -28,5 +28,28 @@ projects/*/bgm.mp3
 # HyperFrames 中间产物：assets/bg.png 是 images/ 的拷贝，只保留 index.html 模板入库
 projects/*/hf/*/assets/
 
+# 其他散落的视频/音频产物目录（运行时输出，不入库）
+projects/*/hd/
+projects/*/hf/loop/
+projects/*/video/
+
+# 生成的图片产物（运行时输出，不入库；仅保留文本元数据与 hf 模板 index.html）
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.bmp
+
+# 顶层及其他位置的成品视频（含参考片/成片，体积大，不入库）
+*.mp4
+*.wav
+*.mov
+*.avi
+
+# 备份 / 临时文件（非交付物，不入库）
+*.bak*
+projects/*/*_backup.json
+
 # 运行时模型权重（第三方依赖，约 168MB，超 GitHub 单文件 100MB 硬限制，不入库；运行时自行下载/放置）
 models/

@@ -91,5 +91,50 @@ SUBTITLE_OUTLINE = 4        # 描边粗细
 SUBTITLE_SHADOW = 2         # 阴影深浅
 SUBTITLE_FIT = 0.90         # 单行占可用宽度的比例，留 10% 余量防溢出
 
+# --------------------------------------------------------------------------
+# 画面比例（项目级）
+#
+# 竖屏 9:16  → 1080x1920（短视频平台）
+# 横屏 16:9  → 1920x1080（企业宣传片 / 大屏 / 手机横屏播放）
+#
+# 字幕、片头的字号与边距不能跨比例复用：竖屏 1080 宽的 54px 字号搬到
+# 1920 宽会显小，而距底 320px 在 1080 高的横屏里会顶到画面中间。
+# 所以这里按比例各存一套版式参数，compose 按项目 aspect 取用。
+# --------------------------------------------------------------------------
+ASPECTS: dict[str, dict] = {
+    "portrait": {
+        "label": "竖屏 9:16",
+        "width": 1080, "height": 1920,
+        "sub_size": SUBTITLE_SIZE,      # 54
+        "sub_lr": SUBTITLE_MARGIN_LR,   # 90
+        "sub_v": SUBTITLE_MARGIN_V,     # 320
+        "title_margin": 80,
+    },
+    "landscape": {
+        "label": "横屏 16:9",
+        "width": 1920, "height": 1080,
+        "sub_size": 58,
+        "sub_lr": 150,
+        "sub_v": 82,
+        "title_margin": 140,
+    },
+}
+DEFAULT_ASPECT = "portrait"
+
+
+def normalize_aspect(aspect: str | None) -> str:
+    """把任意输入收敛成合法比例 key，非法值回落到竖屏。"""
+    a = (aspect or "").strip().lower()
+    # 兼容前端/命令行传 16:9 / 9:16 / landscape / portrait
+    a = {"16:9": "landscape", "9:16": "portrait", "横屏": "landscape",
+         "竖屏": "portrait"}.get(a, a)
+    return a if a in ASPECTS else DEFAULT_ASPECT
+
+
+def aspect_conf(aspect: str | None) -> dict:
+    """返回该比例的画布与版式参数（含 width/height/sub_* /title_margin）。"""
+    return ASPECTS[normalize_aspect(aspect)]
+
+
 for _d in (PROJECTS_DIR, TASKS_DIR, LOG_DIR):
     os.makedirs(_d, exist_ok=True)

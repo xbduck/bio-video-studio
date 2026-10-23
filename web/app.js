@@ -10,6 +10,10 @@ const state = {
   promptText: '',
 };
 
+/* ---- 分类模式：?cat=dingding-city 时进入「企业文化 · 叮叮城故事」专栏视图 ---- */
+const QS = new URLSearchParams(location.search);
+const CULTURE_MODE = QS.get('cat') === 'dingding-city';
+
 /* ---------------- 基础 ---------------- */
 
 function toast(msg) {
@@ -63,7 +67,10 @@ function assetUrl(path) {
 /* ---------------- 项目列表 ---------------- */
 
 async function loadProjects(selectId) {
-  state.projects = await api('/api/projects');
+  let all = await api('/api/projects');
+  const isCulture = (p) => (p.title || '').includes('叮叮城故事');
+  all = CULTURE_MODE ? all.filter(isCulture) : all.filter((p) => !isCulture(p));
+  state.projects = all;
   renderProjectList();
   if (selectId) openProject(selectId);
   else if (state.current) openProject(state.current.id, true);
@@ -83,7 +90,7 @@ function renderProjectList() {
   box.innerHTML = state.projects.map((p) => `
     <div class="proj-item ${state.current && state.current.id === p.id ? 'active' : ''}"
          data-id="${p.id}">
-      <div class="pi-name">${esc(p.person)}</div>
+      <div class="pi-name">${esc(CULTURE_MODE ? (p.title || p.person) : p.person)}</div>
       <div class="pi-meta">${p.scenes} 分镜 · 图 ${p.images} · 视频 ${p.videos}${p.output_url ? ' · 已成片' : ''}</div>
     </div>`).join('');
   box.querySelectorAll('.proj-item').forEach((el) => {
@@ -115,10 +122,19 @@ function renderProject() {
   const ni = p.scenes.filter((s) => s.image_path).length;
   const nv = p.scenes.filter((s) => s.video_path).length;
   const na = p.scenes.filter((s) => s.audio_path).length;
-  $('pStats').textContent = `${n} 分镜 · 图 ${ni}/${n} · 视频 ${nv}/${n} · 配音 ${na}/${n}`;
+  const aspect = p.aspect || 'portrait';
+  const aspectTxt = aspect === 'landscape' ? '横屏 16:9' : '竖屏 9:16';
+  const subTxt = (p.burn_subtitles === false) ? '字幕 关' : '字幕 开';
+  $('pStats').textContent =
+    `${n} 分镜 · 图 ${ni}/${n} · 视频 ${nv}/${n} · 配音 ${na}/${n} · ${aspectTxt} · ${subTxt}`;
 
-  $('voiceSel').value = p.voice || 'zh-CN-YunjianNeural';
+  $('aspectSel').value = aspect;
+  // burn_subtitles === false 是「不烧录字幕（视频自带 / 无字幕）」，渲染时透传原画面
+  $('subSel').value = (p.burn_subtitles === false) ? '0' : '1';
+  // voice === '' 是「不使用旁白（沿用视频原声）」，不能再回落成默认音色
+  $('voiceSel').value = (p.voice === undefined || p.voice === null) ? 'zh-CN-YunjianNeural' : p.voice;
   $('rateSel').value = p.rate || '+0%';
+  $('cropBottom').value = p.crop_bottom ?? 0;
   $('bgmName').textContent = p.bgm_path || '未设置';
   $('bgmVol').value = p.bgm_volume ?? 0.18;
   $('bgmVolVal').textContent = (p.bgm_volume ?? 0.18).toFixed(2);
@@ -166,7 +182,9 @@ function updateSteps() {
   else if (nVid < nAll) { set('stateVideos', 'waiting', `${nVid}/${nAll} · 待生成`); mark('stepVideos', !vidTask); }
   else { set('stateVideos', 'ok', `${nVid}/${nAll}`); mark('stepVideos', false); }
 
+  const noVoice = p.voice === '' || p.voice === null;
   if (!nAll) set('stateTts', '', '待剧本');
+  else if (noVoice) set('stateTts', 'ok', '原声 · 不配音');
   else if (nAud < nAll) set('stateTts', 'waiting', `${nAud}/${nAll} · 点此配音`);
   else set('stateTts', 'ok', `${nAud}/${nAll}`);
 
@@ -252,13 +270,65 @@ function buildPrompt(types, p, plan) {
       videosLine = `把【${p.person}】的批量生成视频任务跑完，路线：混合（约 ${plan.estimate_low}~${plan.estimate_high} 积分）。规则：仅对 ${aiList} 使用视频大模型图生视频（这些是真实物理运动，如开车/行走/航拍）；其余 ${localList} 一律用本地渲染（推/拉/摇/移），**不要调用视频大模型、不要消耗积分**。`;
     }
   }
+  const culture = p.category === 'dingding-city' || (p.title || '').includes('叮叮城故事');
+  // 取集号与价值观关键词：从「叮叮城故事 · EP.02 说到做到」→ 集号 02、关键词 说到做到
+  const epNo = ((p.title || '').match(/EP\.(\d+)/i) || [])[1] || '';
+  const theme = ((p.title || '').split('·').pop().trim().replace(/^EP\.\d+\s*/, '')) || '企业文化';
+  const ROOT = '/Users/lingmf/Downloads/workbuddy/bio-video-studio';
   const map = {
-    script: `为【${p.person}】写一份从出生到死亡的分镜剧本（8-12 个重大事件，每镜含旁白、生图提示词、运镜提示词），并写入工程`,
+    script: culture
+      ? `为【${p.person}】生成《${p.series || '叮叮城故事'}》单集分镜剧本，走「母版 + 单集任务提示词」两层流程：\n\n` +
+        `【必读权威文件】（工程根 ${ROOT}/，逐一读完再动笔）\n` +
+        `1. ${ROOT}/dingding-city/剧本生成规范_v2.md —— 系列通用母版（结构 / 第3A节导演工艺 / 护栏 / scenes schema / 自检清单，最高约束）\n` +
+        `2. ${ROOT}/dingding-city/单集任务提示词_模板.md —— 单集专用信息模板（只填本集专属，不重复通用规则）\n` +
+        `3. ${ROOT}/dingding-city/角色圣经.md —— 角色特征 + 英文核心句 + 视觉红线（每镜 prompt 原样重复角色特征）\n` +
+        `4. ${ROOT}/dingding-city/系列总览.md —— 本集价值观对内原文（逐字对齐，不得改写）+ 簇归属\n` +
+        `5. ${ROOT}/dingding-city/分镜模板.md —— 视觉 DNA 前缀（第三节）+ project.json schema\n` +
+        `6. ${ROOT}/dingding-city/选题库.md —— 本集剧情钩子参考\n\n` +
+        `【第一步 · 生成单集任务提示词】\n` +
+        `· 从本集标题提取集号与关键词（如「叮叮城故事 · EP.${epNo || '03'} ${theme}」→ 集号 ${epNo || '03'}、关键词 ${theme}）。\n` +
+        `· 先查 ${ROOT}/dingding-city/ 下是否已有本集任务提示词文件（命名 EPnn_关键词_任务提示词_v*.md）：\n` +
+        `  已有 → 直接用作权威，跳过本步；没有 → 复制 单集任务提示词_模板.md，填好【】占位（集号、关键词、系列总览对内原文、簇、角色分配、命题/立场锚、六拍剧情、三次反转、导演专属设定、护栏、落库），写入 ${ROOT}/dingding-city/EP${epNo || '03'}_${theme}_任务提示词_v1.md。\n` +
+        `· 本集专属信息从 系列总览.md（对内原文 + 簇）与 选题库.md（钩子）取，不在母版里预设剧情。\n\n` +
+        `【第二步 · 落 12 镜分镜】\n` +
+        `· 严格按上一步任务提示词 + 母版护栏 / 导演工艺 / schema，把 12 镜写入工程 project.json 的 scenes[]。\n` +
+        `· 字段：index / title / duration(整数秒, A 档 10–13) / narration(30–45 字, 角色对白用「」) / sound(环境/拟音/BGM/旁白四层) / image_prompt(先贴分镜模板第三节视觉 DNA 前缀) / video_prompt(以 "Locked-off static camera, absolutely no camera movement, no zoom, no pan" 开头) / image_path:"" / video_path:"" / audio_path:"" / image_status:"pending" / video_status:"pending"。\n` +
+        `· year / age 留空字符串；aspect: landscape，category: dingding-city，series: 叮叮城故事；点题句写入 ending_subtitle。\n` +
+        `· 总时长合计 120–180 秒（≥2 分钟）；旁白 ≤4.3 字/秒；数字写中文、无英文缩写；屏幕 no readable text, no letters。\n` +
+        `· 角色只用确认班底 + 本集一次性动物 / 无名客串，无新造常驻角色、无人类。\n` +
+        `· 完成后把 pending 的 script 任务标记 done（或直接编辑 project.json 后保存）。\n` +
+        `· 交付附：logline、三次反转表（位置｜预期｜实际｜逻辑来源）、12 镜时长合计与每镜语速、母版第 7 节自检勾选、视觉母题与点题字幕。`
+      : `为【${p.person}】写一份从出生到死亡的分镜剧本（8-12 个重大事件，每镜含旁白、生图提示词、运镜提示词），并写入工程`,
     images: `把【${p.person}】的批量生图任务跑完（共 ${nAll - nImg} 张待生成）`,
     videos: videosLine,
   };
   const parts = types.map((t) => map[t]).filter(Boolean);
-  return `请处理「生平短片工厂」的待办任务：\n1. ${parts.join('\n2. ')}\n（工程目录：bio-video-studio/projects/${p.slug}）`;
+  const factory = culture ? '企业文化专栏' : '生平短片工厂';
+  return `请处理「${factory}」的待办任务：\n1. ${parts.join('\n2. ')}\n（工程目录：bio-video-studio/projects/${p.slug}）`;
+}
+
+/* ---------------- 企业文化专栏（隐藏 year/age + 换品牌） ---------------- */
+
+function hideYearAge() {
+  const p = state.current;
+  if (!p) return CULTURE_MODE;
+  return p.category === 'dingding-city' || (p.title || '').includes('叮叮城故事');
+}
+
+function applyCultureBranding() {
+  document.title = '企业文化 · 叮叮城故事';
+  const h1 = document.querySelector('.brand h1');
+  if (h1) h1.textContent = '企业文化 · 叮叮城故事';
+  const sub = document.querySelector('.brand p');
+  if (sub) sub.textContent = 'TT虎 系列短剧 · 分镜 → 配图 → 视频 → 成片';
+  const np = document.querySelector('.new-project');
+  if (np) np.style.display = 'none';
+  const foot = document.querySelector('.sidebar-foot');
+  if (foot) foot.style.display = 'none';
+  const nav = document.querySelectorAll('.brand a.btn, .topbar a.btn');
+  nav.forEach((a) => {
+    a.classList.toggle('active', a.textContent.includes('企业'));
+  });
 }
 
 /* ---------------- 分镜表 ---------------- */
@@ -285,12 +355,16 @@ function sceneHtml(s, i) {
     </div>
     <div class="scene-main">
       <div class="scene-row">
-        <input class="inp-year" data-f="year" value="${esc(s.year)}" placeholder="年份">
-        <input class="inp-age" data-f="age" value="${esc(s.age)}" placeholder="年龄">
-        <input class="inp-title" data-f="title" value="${esc(s.title)}" placeholder="事件标题">
+        ${hideYearAge() ? '' : `<input class="inp-year" data-f="year" value="${esc(s.year)}" placeholder="年份">
+        <input class="inp-age" data-f="age" value="${esc(s.age)}" placeholder="年龄">`}
+        <input class="inp-title" data-f="title" value="${esc(s.title)}" placeholder="${hideYearAge() ? '镜头标题' : '事件标题'}">
       </div>
       <span class="field-label">旁白 / 字幕</span>
       <textarea data-f="narration" placeholder="这一段念给观众听的话">${esc(s.narration)}</textarea>
+      <div class="scene-row">
+        <input class="inp-age" data-f="duration" value="${esc(s.duration)}" placeholder="时长（秒）">
+        <input class="inp-title" data-f="sound" value="${esc(s.sound)}" placeholder="音效 / 音乐">
+      </div>
       <span class="field-label">生图提示词（画面描述）</span>
       <textarea class="prompt" data-f="image_prompt" placeholder="画面内容、时代、光线、构图">${esc(s.image_prompt)}</textarea>
       <span class="field-label">运镜提示词（视频动态）</span>
@@ -299,7 +373,9 @@ function sceneHtml(s, i) {
     <div class="scene-assets">
       <div class="asset-row">
         <div class="asset" data-kind="image" data-src="${imgUrl}">
-          ${imgUrl ? `<img src="${imgUrl}" loading="lazy">` : '<span class="ph">未生成图片</span>'}
+          ${imgUrl ? `<img src="${imgUrl}" loading="lazy">`
+            : (vidUrl ? '<span class="ph">未生成图片<br><small>可用视频截帧</small></span>'
+                      : '<span class="ph">未生成图片</span>')}
           <span class="badge ${s.image_path ? 'ok' : ''}">图</span>
           <button class="scene-del" data-del="${s.index}" title="删除分镜">×</button>
         </div>
@@ -311,9 +387,10 @@ function sceneHtml(s, i) {
       ${audUrl
         ? `<div class="audio-chip ok"><audio controls src="${audUrl}"></audio></div>`
         : '<div class="audio-chip">未配音</div>'}
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn small" data-upload="${s.index}" data-kind="image">换图</button>
         <button class="btn small" data-upload="${s.index}" data-kind="video">换视频</button>
+        ${vidUrl ? `<button class="btn small" data-frame="${s.index}" title="从这条视频里抽一帧作为分镜图">从视频截帧</button>` : ''}
       </div>
     </div>
   </div>`;
@@ -355,6 +432,28 @@ function bindScenes() {
     el.querySelectorAll('[data-upload]').forEach((b) => {
       b.onclick = () => triggerUpload(Number(b.dataset.upload), b.dataset.kind);
     });
+
+    el.querySelectorAll('[data-frame]').forEach((b) => {
+      b.onclick = async () => {
+        const i = Number(b.dataset.frame);
+        const label = b.textContent;
+        b.disabled = true;
+        b.textContent = '截帧中…';
+        try {
+          const r = await api(`/api/projects/${state.current.id}/scenes/${i}/frame`, {
+            method: 'POST', body: JSON.stringify({ force: true }),
+          });
+          if (!r.ok) throw new Error(r.error || r.reason || '截帧失败');
+          toast(`镜 ${i} 已从视频截帧`);
+          state.current = await api(`/api/projects/${state.current.id}`);
+          renderProject();
+        } catch (e) {
+          toast('截帧失败：' + e.message);
+          b.disabled = false;
+          b.textContent = label;
+        }
+      };
+    });
   });
 }
 
@@ -374,11 +473,17 @@ function triggerUpload(index, kind) {
     if (!f) return;
     const data = await readAsDataURL(f);
     try {
-      await api(`/api/projects/${state.current.id}/asset`, {
+      const r = await api(`/api/projects/${state.current.id}/asset`, {
         method: 'POST',
         body: JSON.stringify({ index, kind, filename: f.name, data }),
       });
-      toast('已上传');
+      if (r.frame_auto && r.frame_auto.ok) {
+        toast(kind === 'video' ? '已上传视频，并自动截取首帧填充分镜图' : '已上传');
+      } else if (r.frame_auto && !r.frame_auto.ok) {
+        toast('已上传视频（该镜已有图片，未覆盖；可点「从视频截帧」刷新）');
+      } else {
+        toast('已上传');
+      }
       state.current = await api(`/api/projects/${state.current.id}`);
       renderProject();
     } catch (e) { toast('上传失败：' + e.message); }
@@ -405,7 +510,7 @@ function openModal(src, kind, scene) {
   if (scene) {
     const cap = document.createElement('div');
     cap.className = 'modal-cap';
-    cap.innerHTML = `<b>${esc(scene.year)} ${esc(scene.title)}</b><br>${esc(scene.narration)}`;
+    cap.innerHTML = `<b>${esc(hideYearAge() ? '' : scene.year)} ${esc(scene.title)}</b><br>${esc(scene.narration)}`;
     c.appendChild(cap);
   }
   $('modal').classList.remove('hidden');
@@ -554,7 +659,10 @@ $('btnOpenFolder').onclick = async () => {
 
 async function loadVoices() {
   const vs = await api('/api/voices');
-  $('voiceSel').innerHTML = vs.map((v) => `<option value="${v.id}">${v.name}</option>`).join('');
+  // 第一项为空值：视频自带配音时不选音色，合成时保留原声音轨
+  $('voiceSel').innerHTML =
+    '<option value="">不使用（沿用视频自带音色 / 原声）</option>'
+    + vs.map((v) => `<option value="${v.id}">${v.name}</option>`).join('');
 }
 
 $('btnCreate').onclick = async () => {
@@ -602,11 +710,33 @@ $('btnSaveScenes').onclick = async () => {
   } catch (e) { toast(e.message); }
 };
 
+$('btnFramesFromVideos').onclick = async () => {
+  const btn = $('btnFramesFromVideos');
+  btn.disabled = true;
+  btn.textContent = '截帧中…';
+  try {
+    const r = await api(`/api/projects/${state.current.id}/frames`, {
+      method: 'POST', body: JSON.stringify({}),
+    });
+    const n = r.count || 0;
+    const skip = (r.skipped || []).length;
+    const bad = (r.failed || []).length;
+    toast(`已截 ${n} 张${skip ? ` · 跳过 ${skip}（已有图）` : ''}${bad ? ` · 失败 ${bad}` : ''}`);
+    state.current = await api(`/api/projects/${state.current.id}`);
+    renderProject();
+  } catch (e) {
+    toast('截帧失败：' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '全部从视频截帧';
+  }
+};
+
 $('btnAddScene').onclick = () => {
   const scenes = state.current.scenes;
   scenes.push({
     index: scenes.length + 1, year: '', age: '', title: '新分镜',
-    narration: '', image_prompt: '', video_prompt: '',
+    narration: '', duration: '', sound: '', image_prompt: '', video_prompt: '',
     image_path: '', video_path: '', audio_path: '',
     image_status: 'pending', video_status: 'pending',
   });
@@ -625,14 +755,30 @@ $('pTitle').addEventListener('change', async () => {
 });
 
 $('btnSaveSettings').onclick = async () => {
-  await api(`/api/projects/${state.current.id}`, {
+  const r = await api(`/api/projects/${state.current.id}`, {
     method: 'PATCH', body: JSON.stringify({
       voice: $('voiceSel').value,
       rate: $('rateSel').value,
+      aspect: $('aspectSel').value,
+      crop_bottom: Number($('cropBottom').value || 0),
+      burn_subtitles: $('subSel').value === '1',
       bgm_volume: Number($('bgmVol').value),
     }),
   });
-  toast('设置已保存');
+  state.current = await api(`/api/projects/${state.current.id}`);
+  renderProject();
+  toast(r.audio_dropped ? `设置已保存（已清除 ${r.audio_dropped} 条旧配音，需重新配音）` : '设置已保存');
+};
+
+// 改画面比例/音色时不落库，只在保存时生效；这里给即时反馈
+$('aspectSel').onchange = () => {
+  const t = $('aspectSel').value === 'landscape' ? '横屏 1920×1080' : '竖屏 1080×1920';
+  toast(`画面切到${t}，点「保存设置」后生效`);
+};
+
+$('subSel').onchange = () => {
+  const on = $('subSel').value === '1';
+  toast(on ? '将烧录自配旁白字幕，点「保存设置」后生效' : '不烧录字幕，直接透传视频自带字幕，点「保存设置」后生效');
 };
 
 $('bgmVol').oninput = () => { $('bgmVolVal').textContent = Number($('bgmVol').value).toFixed(2); };
@@ -662,8 +808,9 @@ $('btnDelete').onclick = async () => {
 /* ---------------- 启动 ---------------- */
 
 (async function init() {
+  if (CULTURE_MODE) applyCultureBranding();
   await loadVoices();
-  await loadProjects();
+  await loadProjects(QS.get('p') || undefined);
   try {
     const h = await api('/api/health');
     $('health').textContent = `ffmpeg ${h.ffmpeg ? '就绪' : '缺失'} · 待处理任务 ${h.pending_tasks}`;

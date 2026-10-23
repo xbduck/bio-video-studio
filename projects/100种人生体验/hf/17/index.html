@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080, height=1920" />
+<title>17 / 100 · 旅行</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:1080px; height:1920px; overflow:hidden; background:#0b0b0f;
+    font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage { position:relative; width:100%; height:100%; }
+
+  /* 渐变背景：颜色由 JS 按分类注入到 --c1/--c2 */
+  .bg {
+    position:absolute; inset:0;
+    background:
+      radial-gradient(120% 80% at 78% 12%, rgba(255,255,255,0.10), transparent 55%),
+      linear-gradient(160deg, var(--c1) 0%, var(--c2) 100%);
+  }
+  /* 细微噪点/光晕层，避免纯色发闷 */
+  .glow {
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(closest-side at 22% 82%, rgba(255,255,255,0.14), transparent 70%);
+    mix-blend-mode:screen;
+  }
+  .vignette {
+    position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,0.55) 100%);
+  }
+
+  /* 背景大水印序号 */
+  .watermark {
+    position:absolute; left:50%; top:52%; transform:translate(-50%,-50%) scale(1.1);
+    font-size:880px; font-weight:800; line-height:1; color:#fff; opacity:0;
+    letter-spacing:-0.04em; font-feature-settings:"tnum";
+    text-shadow:0 30px 90px rgba(0,0,0,0.35);
+  }
+
+  /* 顶部分类标签 */
+  .top { position:absolute; top:150px; left:0; right:0; text-align:center; opacity:0; }
+  .pill {
+    display:inline-block; padding:14px 40px; border-radius:999px;
+    font-size:34px; font-weight:600; letter-spacing:0.22em;
+    color:#fff; background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.28);
+    backdrop-filter:blur(4px);
+  }
+
+  /* 中心文案 */
+  .center {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) translateY(30px);
+    width:84%; text-align:center; opacity:0;
+  }
+  .text {
+    display:inline-block;
+    color:#fff; font-weight:700; line-height:1.42; letter-spacing:0.01em;
+    text-shadow:0 6px 40px rgba(0,0,0,0.55);
+    white-space:pre-wrap; word-break:break-word;
+  }
+
+  /* 底部进度条 + 计数 */
+  .bottom {
+    position:absolute; left:80px; right:80px; bottom:160px; opacity:0;
+  }
+  .track {
+    height:8px; border-radius:999px; background:rgba(255,255,255,0.18); overflow:hidden;
+  }
+  .bar {
+    height:100%; width:0%; border-radius:999px;
+    background:linear-gradient(90deg, rgba(255,255,255,0.55), #fff);
+  }
+  .count {
+    margin-top:30px; text-align:center; font-size:40px; font-weight:600;
+    color:rgba(255,255,255,0.82); letter-spacing:0.18em;
+    font-feature-settings:"tnum";
+  }
+  .count b { color:#fff; font-weight:800; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="bg"></div>
+  <div class="glow"></div>
+  <div class="watermark" id="wm"></div>
+  <div class="top"><span class="pill" id="cat"></span></div>
+  <div class="center"><span class="text" id="txt"></span></div>
+  <div class="bottom">
+    <div class="track"><div class="bar" id="bar"></div></div>
+    <div class="count"><b id="cur">17</b>&nbsp;/&nbsp;100</div>
+  </div>
+  <div class="vignette"></div>
+</div>
+
+<script>
+// ===== 数据由生成器注入 =====
+window.__SCENE__ = { idx: 17, total: 100, category: "旅行", text: "骑单车穿过一座小镇" };
+window.__DUR__ = 4.992;
+// ============================
+
+// 分类 → 渐变配色（c1 深 / c2 浅）
+const PALETTE = {
+  "自然": ["#0f3d2e", "#1f7a52"],
+  "旅行": ["#103a5a", "#1f86b8"],
+  "勇气": ["#2a164a", "#7a3fd0"],
+  "美食": ["#5a2418", "#c4622f"],
+  "浪漫": ["#4a1638", "#c83f86"],
+  "宁静": ["#16263f", "#3f74b0"],
+  "成长": ["#3a2a10", "#c0a02f"],
+  "艺术": ["#1a1030", "#5a3fa0"],
+  "社交": ["#103a3a", "#1f9a8a"],
+  "自我": ["#2a1020", "#a03f6a"]
+};
+function pickPalette(cat, idx) {
+  for (const k in PALETTE) if (cat && cat.indexOf(k) >= 0) return PALETTE[k];
+  const keys = Object.keys(PALETTE);
+  return PALETTE[keys[idx % keys.length]];
+}
+
+const E = 0.8; // 入场动画时长
+const DUR = window.__DUR__ || 4.0;
+const S = window.__SCENE__;
+const [c1, c2] = pickPalette(S.category, S.idx);
+document.documentElement.style.setProperty('--c1', c1);
+document.documentElement.style.setProperty('--c2', c2);
+
+const wm = document.getElementById('wm');
+const bar = document.getElementById('bar');
+const topEl = document.querySelector('.top');
+const centerEl = document.querySelector('.center');
+const bottomEl = document.querySelector('.bottom');
+
+// 文案经 textContent 注入，避免引号/特殊字符破坏 JS 字符串或 HTML
+wm.textContent = String(S.idx);
+document.getElementById('cat').textContent = S.category || '';
+document.getElementById('txt').textContent = S.text || '';
+document.title = (S.category ? S.category + ' · ' : '') + S.idx + ' / ' + S.total;
+
+// 文案自适应字号（越短越大，最长约 14 字换行）
+const len = (S.text || "").length;
+const fs = Math.max(54, Math.min(112, Math.round(980 / Math.max(6, len))));
+txt.style.fontSize = fs + 'px';
+
+function clamp(x,lo,hi){ return Math.max(lo, Math.min(hi, x)); }
+function ease(t){ return 1 - Math.pow(1 - t, 3); }
+
+function update(t) {
+  // 水印：淡入 + 轻微缩小
+  const wk = ease(clamp(t / E, 0, 1));
+  wm.style.opacity = (0.07 * wk).toFixed(3);
+  wm.style.transform = 'translate(-50%,-50%) scale(' + (1.10 - 0.10 * wk).toFixed(3) + ')';
+
+  // 分类标签：从上落下淡入（动画在父容器 .top）
+  const ck = ease(clamp(t / E, 0, 1));
+  topEl.style.opacity = ck.toFixed(3);
+  topEl.style.transform = 'translateY(' + ((1 - ck) * -22).toFixed(1) + 'px)';
+
+  // 中心文案：略延迟、从下浮起淡入（动画在父容器 .center）
+  const tk = ease(clamp((t - 0.12) / E, 0, 1));
+  centerEl.style.opacity = tk.toFixed(3);
+  centerEl.style.transform = 'translate(-50%, -50%) translateY(' + ((1 - tk) * 34).toFixed(1) + 'px)';
+
+  // 进度条：真实整体进度（idx/total），随底部容器淡入
+  const pk = ease(clamp(t / E, 0, 1));
+  bar.style.width = (S.idx / S.total * 100).toFixed(1) + '%';
+  bottomEl.style.opacity = pk.toFixed(3);
+}
+
+window.__update = update;
+update(0);
+</script>
+</body>
+</html>

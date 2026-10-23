@@ -99,16 +99,25 @@ def new_project_id() -> str:
     return uuid.uuid4().hex[:8]
 
 
-def create_project(person: str, title: str | None = None) -> dict:
+def create_project(person: str, title: str | None = None,
+                    aspect: str | None = None) -> dict:
     """创建空项目。若同名项目已存在则直接返回它。"""
     index = load_index()
     slug = make_slug(person)
 
-    # 同名人物复用同一目录，避免重复生成
+    # 复用已有项目：同名人物，或同一 slug 目录已登记过（避免一个目录挂多个 project_id）
     for pid, existing_slug in index.items():
         d = os.path.join(config.PROJECTS_DIR, existing_slug)
         meta = _read_json(os.path.join(d, "project.json"), None)
-        if meta and meta.get("person") == person:
+        if meta and (meta.get("person") == person or existing_slug == slug):
+            return meta
+
+    # 目录已在磁盘上（索引缺失/被清理过）时直接复用，不再新发 id
+    legacy_dir = os.path.join(config.PROJECTS_DIR, slug)
+    if os.path.isdir(legacy_dir):
+        meta = _read_json(os.path.join(legacy_dir, "project.json"), None)
+        if meta and meta.get("id"):
+            register(meta["id"], meta.get("slug") or slug)
             return meta
 
     project_id = new_project_id()
@@ -128,6 +137,9 @@ def create_project(person: str, title: str | None = None) -> dict:
         "style": config.DEFAULT_STYLE,
         "voice": config.DEFAULT_VOICE,
         "rate": config.DEFAULT_RATE,
+        "aspect": config.normalize_aspect(aspect),   # portrait 竖屏 | landscape 横屏
+        "crop_bottom": 0,                             # 底部裁切像素（去水印条）
+        "burn_subtitles": True,                       # 是否烧录自配字幕（False=视频自带/不要字幕）
         "bgm_path": "",
         "bgm_volume": 0.18,
         "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),

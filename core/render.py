@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import os
+import re
 import threading
 
 from . import atmos, compose, config, jobs, store, tts, video_plan
@@ -34,13 +35,15 @@ def parse_motion(text: str) -> dict:
 
 
 def _zoompan_clip(image_path: str, out_path: str, seconds: float,
-                  motion: dict) -> tuple[bool, str]:
+                  motion: dict, aspect: str | None = None) -> tuple[bool, str]:
     """纯 2D 相机运动（Ken Burns）。作为视差渲染不可用时的兜底。"""
-    frames = max(30, int(seconds * compose.FPS))
+    W, H, FPS_ = compose.canvas(aspect)
+    frames = max(30, int(seconds * FPS_))
     kind = motion.get("kind", "zoom_in")
 
-    # 先放大到 2K 再裁切，给运镜留足余量
-    base = "scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,"
+    # 先放大到 2 倍画布再裁切，给运镜留足余量（横竖屏通用）
+    base = (f"scale={W * 2}:{H * 2}:force_original_aspect_ratio=increase:flags=lanczos,"
+            f"crop={W * 2}:{H * 2},")
 
     if kind == "zoom_in":
         z0, z1 = 1.0, 1.18
@@ -67,7 +70,7 @@ def _zoompan_clip(image_path: str, out_path: str, seconds: float,
         + f":x='{xexpr}'"
         + f":y='{yexpr}'"
         + f":d={frames}"
-        + f":s={compose.WIDTH}x{compose.HEIGHT}:fps={compose.FPS}"
+        + f":s={W}x{H}:fps={FPS_}"
         + f",trim=duration={seconds:.2f},setpts=PTS-STARTPTS"
     )
     return compose._run([
@@ -80,7 +83,7 @@ def _zoompan_clip(image_path: str, out_path: str, seconds: float,
 
 
 def _cinematic_clip(image_path: str, out_path: str, seconds: float,
-                    motion: dict) -> tuple[bool, str]:
+                    motion: dict, aspect: str | None = None) -> tuple[bool, str]:
     """整图电影感运镜 + 氛围动态层（本地 ffmpeg 渲染，0 积分）。
 
     分三层叠加：
@@ -91,7 +94,7 @@ def _cinematic_clip(image_path: str, out_path: str, seconds: float,
     不做前背景分离 —— 多人/复杂场景抠图会在背景残留人物轮廓形成
     「灵魂出窍」式重影，已实测否决（详见 CHANGELOG 2026-09-17）。
     """
-    W, H, FPS = compose.WIDTH, compose.HEIGHT, compose.FPS
+    W, H, FPS = compose.canvas(aspect)
     N = max(30, int(seconds * FPS))
     FD = max(2, N - 1)
     sm = f"(min(1,on/{FD}))*(min(1,on/{FD}))*(3-2*(min(1,on/{FD})))"
@@ -123,7 +126,8 @@ def _cinematic_clip(image_path: str, out_path: str, seconds: float,
     dya = max(8, (dh - H) // 2 - 10)
 
     vf = (
-        f"[0:v]scale=2160:3840:force_original_aspect_ratio=increase,crop=2160:3840,"
+        f"[0:v]scale={W * 2}:{H * 2}:force_original_aspect_ratio=increase:flags=lanczos,"
+        f"crop={W * 2}:{H * 2},"
         f"zoompan=z='{zexpr}':x='{xexpr}':y='{yexpr}'"
         f":d={N}:s={W}x{H}:fps={FPS},setsar=1[base];"
         f"[2:v]format=rgba,fps={FPS}[flare];"
@@ -154,7 +158,8 @@ def _cinematic_clip(image_path: str, out_path: str, seconds: float,
 
 
 def image_to_clip(image_path: str, out_path: str, seconds: float = 6.0,
-                  motion: dict | None = None) -> tuple[bool, str]:
+                  motion: dict | None = None,
+                  aspect: str | None = None) -> tuple[bool, str]:
     """图片 -> 电影感视频片段（本地 ffmpeg 渲染，0 积分）。
 
     主路线：整图电影运镜 + 氛围动态层（光晕 / 浮尘）+ 胶片颗粒 + 暗角调色。
@@ -166,17 +171,43 @@ def image_to_clip(image_path: str, out_path: str, seconds: float = 6.0,
     motion = motion or parse_motion("")
     seconds = max(2.0, min(float(seconds), 10.0))
 
-    ok, err = _cinematic_clip(image_path, out_path, seconds, motion)
+    ok, err = _cinematic_clip(image_path, out_path, seconds, motion, aspect)
     if ok:
         return True, ""
 
-    return _zoompan_clip(image_path, out_path, seconds, motion)
+    return _zoompan_clip(image_path, out_path, seconds, motion, aspect)
 
 
 def _estimate_duration(text: str) -> float:
     """没有配音时按中文语速估算时长（约 4.6 字/秒）。"""
     n = len((text or "").strip())
     return max(3.0, n / 4.6)
+
+
+def _to_seconds(v) -> float:
+    """把剧本里的 duration（"10" / "10s" / "10 秒" / 10）转成秒，失败返回 0。"""
+    if isinstance(v, (int, float)):
+        return float(v)
+    m = re.search(r"\d+(?:\.\d+)?", str(v or ""))
+    return float(m.group(0)) if m else 0.0
+
+
+def _clip_duration(s: dict, has_audio: bool) -> float:
+    """单个分镜的目标时长。
+
+    优先级：旁白音频时长 > 剧本 duration > 视频本身时长 > 按字数估算。
+    后三者是「视频自带配音（不选旁白音色）」场景的时长来源 —— 此时
+    必须用剧本里写好的 8/10/14 秒，否则会按旁白字数瞎猜。
+    """
+    if has_audio:
+        return min(compose.probe_duration(s["_audio"]) + 0.6, 20.0)
+    declared = _to_seconds(s.get("duration"))
+    if declared > 0:
+        return min(max(declared, 1.5), 20.0)
+    vid = compose.probe_duration(s.get("_vid") or "")
+    if vid > 0:
+        return min(vid, 20.0)
+    return min(_estimate_duration(s.get("narration", "")) + 0.6, 20.0)
 
 
 def render_project(project_id: str, with_title: bool = True, with_bgm: bool = True) -> dict:
@@ -195,6 +226,15 @@ def render_project(project_id: str, with_title: bool = True, with_bgm: bool = Tr
     output_dir = os.path.join(pdir, "output")
     for d in (audio_dir, subs_dir, clips_dir, output_dir):
         os.makedirs(d, exist_ok=True)
+
+    # 画布比例（项目级）：竖屏 9:16 / 横屏 16:9
+    aspect = config.normalize_aspect(project.get("aspect"))
+    crop_bottom = int(project.get("crop_bottom") or 0)
+
+    # 字幕开关（项目级）：视频自带字幕 / 不需要字幕时设为 False，
+    # 跳过「生成 + 烧录」自配字幕，直接透传视频原画面（避免双层字幕）。
+    # 默认 True 保持旧行为（仍烧录旁白字幕）。
+    burn_subtitles = bool(project.get("burn_subtitles", True))
 
     scenes = [s for s in project.get("scenes", [])]
     usable = []
@@ -215,54 +255,65 @@ def render_project(project_id: str, with_title: bool = True, with_bgm: bool = Tr
         raise RuntimeError("没有任何可用素材，请先生成图片或视频")
 
     total = len(usable) + 3
-    jobs.update(job_id, 0, f"共 {len(usable)} 个分镜")
+    jobs.update(job_id, 0, f"共 {len(usable)} 个分镜（{config.aspect_conf(aspect)['label']}）")
 
     # ---- 1. 配音 -------------------------------------------------------
-    voice = project.get("voice") or config.DEFAULT_VOICE
+    # voice 为空 = 「不使用旁白（沿用视频自带音色）」：
+    #   不生成 TTS，合成时保留每条视频的原声音轨。
+    voice = (project.get("voice") or "").strip()
     rate = project.get("rate") or config.DEFAULT_RATE
+    tts_on = bool(voice)
     for i, s in enumerate(usable):
         jobs.update(job_id, int(i / total * 70), f"配音 {i+1}/{len(usable)}")
         apath = os.path.join(audio_dir, f"{s['index']:02d}.mp3")
         narration = (s.get("narration") or "").strip()
-        if not os.path.exists(apath) and narration:
+        if tts_on and narration and not os.path.exists(apath):
             try:
                 tts.synthesize(narration, apath, voice, rate, "+0%")
             except Exception:
-                apath = None
-        s["_audio"] = apath if apath and os.path.exists(apath) else None
+                pass
+        s["_audio"] = apath if (tts_on and narration and os.path.exists(apath)) else None
 
     # ---- 2. 逐分镜合成片段 ---------------------------------------------
     clips: list[str] = []
     for i, s in enumerate(usable):
         jobs.update(job_id, 70 + int((i + 1) / total * 25), f"合成片段 {i+1}/{len(usable)}")
 
-        # 时长：以旁白为准，留 0.6s 尾白（上限 20s）
-        if s["_audio"]:
-            dur = compose.probe_duration(s["_audio"]) + 0.6
-        else:
-            dur = _estimate_duration(s.get("narration", "")) + 0.6
-        dur = min(dur, 20.0)
+        # 时长：旁白优先，其次剧本 duration（视频自带配音场景的关键）
+        dur = _clip_duration(s, bool(s["_audio"]))
 
         # 视频源：优先 AI 视频，否则图片推近。
         # 本地运镜视频时长与旁白对齐（seconds=dur），保证 ratio≈1，
         # 避免 build_scene_clip 因短视频触发 tpad 定格导致片段后段静止。
         src_video = s["_vid"]
         if not src_video:
+            if not s["_img"]:
+                continue
             kb = os.path.join(clips_dir, f"{s['index']:02d}_kb.mp4")
             if not os.path.exists(kb):
                 ok, err = image_to_clip(
                     s["_img"], kb, seconds=dur,
                     motion=parse_motion(s.get("video_prompt", "")),
+                    aspect=aspect,
                 )
                 if not ok:
                     continue
             src_video = kb
 
         ass_path = os.path.join(subs_dir, f"{s['index']:02d}.ass")
-        compose.build_ass([(0.0, dur, s.get("narration", ""))], ass_path)
+        if burn_subtitles:
+            compose.build_ass([(0.0, dur, s.get("narration", ""))], ass_path, aspect=aspect)
+        else:
+            ass_path = None  # 不烧录字幕：透传视频自带画面（含其自带字幕）
 
         clip = os.path.join(clips_dir, f"{s['index']:02d}.mp4")
-        ok, err = compose.build_scene_clip(src_video, s["_audio"], dur, ass_path, clip)
+        # keep_original_audio：没配旁白音色时，沿用视频自带音轨，而不是灌静音
+        ok, err = compose.build_scene_clip(
+            src_video, s["_audio"], dur, ass_path, clip,
+            aspect=aspect,
+            crop_bottom=crop_bottom,
+            keep_original_audio=not tts_on,
+        )
         if not ok:
             jobs.fail(job_id, f"分镜 {s['index']} 合成失败: {err}")
             raise RuntimeError(f"分镜 {s['index']} 合成失败: {err}")
@@ -281,6 +332,7 @@ def render_project(project_id: str, with_title: bool = True, with_bgm: bool = Tr
             project.get("title") or project["person"],
             project["person"],
             2.6, title_clip, bg_image=bg,
+            aspect=aspect,
         )
         if ok:
             clips = [title_clip] + clips
@@ -293,7 +345,9 @@ def render_project(project_id: str, with_title: bool = True, with_bgm: bool = Tr
     bgm = project.get("bgm_path") or ""
     if bgm and not os.path.isabs(bgm):
         bgm = os.path.join(pdir, bgm)
-    out_name = f"{project['person']}_生平短片.mp4"
+    # 横屏成片单独命名，避免与同一项目的竖屏成片互相覆盖
+    suffix = "_16x9" if aspect == "landscape" else ""
+    out_name = f"{project['person']}_生平短片{suffix}.mp4"
     out_path = os.path.join(output_dir, out_name)
 
     if with_bgm and bgm and os.path.exists(bgm):
@@ -347,10 +401,15 @@ def start_tts(project_id: str) -> str:
     scenes = project.get("scenes", [])
     jobs.start(job_id, "tts", len(scenes))
 
+    voice = (project.get("voice") or "").strip()
+    if not voice:
+        # 音色为「不使用」：视频自带配音，本条链路直接跳过
+        jobs.finish(job_id, {"count": 0, "skipped": "旁白音色设置为「不使用（沿用视频原声）」"})
+        return job_id
+
     def _run():
         audio_dir = os.path.join(pdir, "audio")
         os.makedirs(audio_dir, exist_ok=True)
-        voice = project.get("voice") or config.DEFAULT_VOICE
         rate = project.get("rate") or config.DEFAULT_RATE
         ok_n = 0
         err = ""

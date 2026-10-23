@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>系列工厂 · 多集长音频</title>
+<link rel="stylesheet" href="style.css?v=2">
+<style>
+  body { overflow: hidden; }
+  .nav { display: flex; gap: 6px; margin-left: 18px; }
+  .nav a {
+    padding: 6px 12px; border-radius: 8px; text-decoration: none;
+    color: var(--ink-2); font-size: 13px; border: 1px solid transparent;
+  }
+  .nav a:hover { background: var(--panel-2); border-color: var(--line); }
+  .nav a.active { background: var(--accent-soft); color: var(--accent); border-color: #f0d7cf; font-weight: 600; }
+
+  .series-side { width: 300px; flex: 0 0 300px; }
+  .series-side .new-btn { padding: 14px; border-bottom: 1px solid var(--line); }
+  .series-list { overflow: auto; flex: 1 1 auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .series-card {
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 12px;
+    background: var(--panel); cursor: pointer; transition: .12s;
+  }
+  .series-card:hover { border-color: var(--line-2); background: var(--panel-2); }
+  .series-card.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .series-card .name { font-weight: 650; font-size: 13.5px; margin-bottom: 3px; }
+  .series-card .meta { font-size: 12px; color: var(--ink-3); display: flex; gap: 8px; flex-wrap: wrap; }
+  .series-card .bar { height: 4px; border-radius: 4px; background: var(--line); margin-top: 9px; overflow: hidden; }
+  .series-card .bar i { display: block; height: 100%; background: var(--ok); }
+
+  .content { flex: 1 1 auto; min-width: 0; overflow: auto; padding: 22px 26px 40px; }
+  .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 16px; }
+  .head h2 { font-size: 20px; margin-bottom: 6px; }
+  .head .sub { color: var(--ink-3); font-size: 12.5px; }
+  .head .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .stats { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 10px 14px; min-width: 120px;
+  }
+  .stat .k { font-size: 11.5px; color: var(--ink-3); }
+  .stat .v { font-size: 18px; font-weight: 650; margin-top: 2px; }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { font-size: 12px; color: var(--ink-3); font-weight: 600; background: var(--panel-2); }
+  tr:last-child td { border-bottom: none; }
+  td .t { font-weight: 550; }
+  td .s { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  table td:nth-child(n+3):nth-child(-n+6), table th:nth-child(n+3):nth-child(-n+6) { white-space: nowrap; }
+  .ep-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11.5px; border: 1px solid var(--line); color: var(--ink-2); background: var(--panel-2); }
+  .badge.running { color: var(--info); background: var(--info-soft); border-color: #c9dcee; }
+  .badge.done { color: var(--ok); background: var(--ok-soft); border-color: #cfe4d8; }
+  .badge.failed, .badge.lost, .badge.missing { color: var(--accent); background: var(--accent-soft); border-color: #f0d7cf; }
+
+  .logbox {
+    margin-top: 16px; background: #1f1d1a; color: #e8e3da; border-radius: var(--radius);
+    padding: 12px 14px; font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+    max-height: 230px; overflow: auto; white-space: pre-wrap; line-height: 1.55;
+  }
+  .empty { padding: 60px 20px; text-align: center; color: var(--ink-3); }
+
+  .modal-mask {
+    position: fixed; inset: 0; background: rgba(20,18,16,.55); display: none;
+    align-items: center; justify-content: center; z-index: 50; padding: 24px;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    background: var(--panel); border-radius: 14px; width: min(920px, 100%);
+    max-height: 90vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  }
+  .modal-h { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .modal-b { padding: 16px 18px; }
+  .modal-b video { width: 100%; max-height: 62vh; background: #000; border-radius: 10px; }
+  .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .form-row label { flex: 1 1 220px; font-size: 12.5px; color: var(--ink-2); }
+  .form-row input, .form-row select {
+    width: 100%; margin-top: 5px; padding: 8px 10px;
+    border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel);
+  }
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 10px;
+    font-size: 13px; opacity: 0; pointer-events: none; transition: .2s; z-index: 60;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark"></span>
+    <div>
+      <h1>系列工厂</h1>
+      <p>一个系列多集长音频 · 睡觉听历史 / 王朝 / 人物</p>
+    </div>
+    <nav class="nav">
+      <a href="/">生平短片</a>
+      <a href="/series" class="active">系列工厂</a>
+      <a href="/culture/">企业文化</a>
+    </nav>
+  </div>
+  <div class="topbar-right"><span id="health" class="health"></span></div>
+</header>
+
+<main class="layout">
+  <aside class="sidebar series-side">
+    <div class="new-btn">
+      <button class="btn primary block" id="btnNew">＋ 新建系列</button>
+    </div>
+    <div class="series-list" id="seriesList"></div>
+  </aside>
+
+  <section class="content" id="content">
+    <div class="empty">左侧选择一个系列；没有的话先「新建系列」。</div>
+  </section>
+</main>
+
+<!-- 新建系列 -->
+<div class="modal-mask" id="newMask">
+  <div class="modal" style="width:min(560px,100%)">
+    <div class="modal-h"><b>新建系列</b><button class="btn small ghost" data-close>关闭</button></div>
+    <div class="modal-b">
+      <div class="form-row">
+        <label>系列目录名（英文/数字/中文均可）<input id="fName" placeholder="如：song-emperors 或 宋朝十八帝"></label>
+      </div>
+      <div class="form-row">
+        <label>专栏名<input id="fSeries" value="睡觉听历史"></label>
+        <label>主题<input id="fTopic" placeholder="如：宋朝十八帝"></label>
+      </div>
+      <div class="form-row">
+        <label>配音音色<select id="fVoice"></select></label>
+        <label>语速
+          <select id="fRate">
+            <option value="-28%">-28% · 标准平缓（200 字/分）</option>
+            <option value="-38%">-38% · 偏慢（172 字/分）</option>
+            <option value="-50%" selected>-50% · 助眠慢速（136 字/分）</option>
+          </select>
+        </label>
+      </div>
+      <p class="small muted">创建后会生成 manifest.json 和 ep01.json 模板，改完文案回到这里点「开始生成」。</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button class="btn" data-close>取消</button>
+        <button class="btn primary" id="btnCreate">创建</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 预览 -->
+<div class="modal-mask" id="prevMask">
+  <div class="modal">
+    <div class="modal-h"><b id="prevTitle">预览</b><button class="btn small ghost" data-close>关闭</button></div>
+    <div class="modal-b" id="prevBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const state = { list: [], current: null, timer: null };
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const mmss = (m) => {
+  if (!m && m !== 0) return "--";
+  const t = Math.round(m * 60), mm = Math.floor(t / 60), ss = t % 60;
+  return `${mm}:${String(ss).padStart(2, "0")}`;
+};
+const STATUS = {
+  idle: ["未开始", "badge"], running: ["生成中", "badge running"],
+  done: ["已完成", "badge done"], failed: ["失败", "badge failed"],
+  lost: ["产物丢失", "badge lost"], missing: ["脚本缺失", "badge missing"],
+};
+
+function toast(msg) {
+  const el = $("#toast"); el.textContent = msg; el.classList.add("show");
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+async function api(url, opt) {
+  const r = await fetch(url, opt);
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.detail || r.statusText);
+  return d;
+}
+
+async function load(keep) {
+  try {
+    state.list = await api("/api/series");
+    renderList();
+    const slug = keep || (state.current && state.current.slug);
+    const cur = state.list.find(s => s.slug === slug) || state.list[0];
+    state.current = cur || null;
+    renderDetail();
+  } catch (e) {
+    $("#content").innerHTML = `<div class="empty">加载失败：${esc(e.message)}</div>`;
+  }
+}
+
+function renderList() {
+  const box = $("#seriesList");
+  if (!state.list.length) { box.innerHTML = `<div class="small muted" style="padding:10px">还没有系列</div>`; return; }
+  box.innerHTML = state.list.map(s => {
+    const pctv = s.episode_count ? Math.round(s.done_count / s.episode_count * 100) : 0;
+    return `<div class="series-card ${state.current && s.slug === state.current.slug ? "active" : ""}" data-slug="${esc(s.slug)}">
+      <div class="name">${esc(s.topic || s.slug)}</div>
+      <div class="meta">
+        <span>${s.episode_count} 集</span>
+        <span>${Math.round(s.total_minutes)} 分钟</span>
+        <span>${s.done_count} 完成</span>
+        ${s.running ? '<span style="color:var(--info)">● 生成中</span>' : ""}
+      </div>
+      <div class="bar"><i style="width:${pctv}%"></i></div>
+    </div>`;
+  }).join("");
+  box.querySelectorAll(".series-card").forEach(el => {
+    el.onclick = () => { state.current = state.list.find(s => s.slug === el.dataset.slug); renderList(); renderDetail(); };
+  });
+}
+
+function renderDetail() {
+  const s = state.current;
+  if (!s) { $("#content").innerHTML = `<div class="empty">左侧选择一个系列。</div>`; return; }
+
+  const rows = s.episodes.map(ep => {
+    const [label, cls] = STATUS[ep.status] || [ep.status, "badge"];
+    const canPlay = !!ep.video_url;
+    return `<tr>
+      <td style="width:64px"><b>${esc(ep.id)}</b></td>
+      <td>
+        <div class="t">${esc(ep.title)}</div>
+        <div class="s">${esc(ep.subject || ep.note || "")}</div>
+      </td>
+      <td style="width:80px">${ep.chars} 字</td>
+      <td style="width:92px">${mmss(ep.est_minutes)}</td>
+      <td style="width:96px"><span class="${cls}">${esc(label)}</span></td>
+      <td style="width:110px">${ep.duration_min ? mmss(ep.duration_min) : "--"}</td>
+      <td style="width:230px">
+        <div class="ep-actions">
+          <button class="btn small" data-run="${esc(ep.id)}" ${s.running ? "disabled" : ""}>生成这集</button>
+          <button class="btn small" data-play="${esc(ep.id)}" ${canPlay ? "" : "disabled"}>预览</button>
+          ${ep.image_video_url ? `<button class="btn small accent" data-play-img="${esc(ep.id)}">配图版</button>` : ""}
+          ${(!ep.image_video_url && ep.status === "done") ? `<button class="btn small" data-mkimg="${esc(ep.id)}">配图</button>` : ""}
+          <button class="btn small ghost" data-open="${esc(ep.output_dir)}" ${ep.output_dir ? "" : "disabled"}>目录</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+
+  $("#content").innerHTML = `
+    <div class="head">
+      <div>
+        <h2>${esc(s.topic || s.slug)}</h2>
+        <div class="sub">${esc(s.series)} · 音色 ${esc(s.voice || "默认")} · 语速 ${esc(s.rate)} · 目录 series/${esc(s.dir_name)}</div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="btnRunAll" ${s.running ? "disabled" : ""}>${s.running ? "生成中…" : "▶ 开始生成"}</button>
+        <button class="btn" id="btnForce">强制重跑</button>
+        <button class="btn ghost" id="btnRefresh">刷新</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">集数</div><div class="v">${s.episode_count}</div></div>
+      <div class="stat"><div class="k">总时长（预估）</div><div class="v">${Math.round(s.total_minutes)} 分</div></div>
+      <div class="stat"><div class="k">总字数</div><div class="v">${s.total_chars}</div></div>
+      <div class="stat"><div class="k">完成</div><div class="v">${s.done_count} / ${s.episode_count}</div></div>
+      <div class="stat"><div class="k">状态</div><div class="v" style="font-size:15px">${s.running ? "生成中" : (s.failed_count ? "有失败" : "待命")}</div></div>
+    </div>
+
+    <div class="panel">
+      <table>
+        <thead><tr><th>集</th><th>标题</th><th>字数</th><th>预估</th><th>状态</th><th>实际</th><th>操作</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <div style="padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+        <b style="font-size:13px">运行日志</b>
+        <span class="small muted">${esc(s.log_path || "")}</span>
+      </div>
+      <div class="logbox" id="logbox">${s.running ? "加载中…" : "（未在运行）"}</div>
+    </div>`;
+
+  $("#btnRunAll").onclick = () => runSeries(s.slug, { force: false });
+  $("#btnForce").onclick = () => { if (confirm("强制重跑会覆盖已有成片，确定？")) runSeries(s.slug, { force: true }); };
+  $("#btnRefresh").onclick = () => load(s.slug);
+
+  document.querySelectorAll("[data-run]").forEach(b => {
+    b.onclick = () => runSeries(s.slug, { only: [b.dataset.run] });
+  });
+  document.querySelectorAll("[data-play]").forEach(b => {
+    b.onclick = () => {
+      const ep = s.episodes.find(e => e.id === b.dataset.play);
+      if (ep) preview(ep);
+    };
+  });
+  document.querySelectorAll("[data-play-img]").forEach(b => {
+    b.onclick = () => {
+      const ep = s.episodes.find(e => e.id === b.dataset.playImg);
+      if (ep) preview(ep, ep.image_video_url, "配图版");
+    };
+  });
+  document.querySelectorAll("[data-mkimg]").forEach(b => {
+    b.onclick = () => makeImages(s.slug, b.dataset.mkimg);
+  });
+  document.querySelectorAll("[data-open]").forEach(b => {
+    b.onclick = () => api("/api/open-folder", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: b.dataset.open })
+    }).then(() => toast("已打开目录")).catch(e => toast("打开失败：" + e.message));
+  });
+
+  if (s.running) refreshLog(s.slug);
+}
+
+async function refreshLog(slug) {
+  try {
+    const d = await api(`/api/series/${encodeURIComponent(slug)}/log?lines=60`);
+    const box = $("#logbox");
+    if (box) { box.textContent = d.log || "（暂无输出）"; box.scrollTop = box.scrollHeight; }
+  } catch (e) { /* ignore */ }
+}
+
+async function runSeries(slug, body) {
+  try {
+    await api(`/api/series/${encodeURIComponent(slug)}/run`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    toast("已启动，正在生成…");
+    setTimeout(() => load(slug), 800);
+  } catch (e) { toast("启动失败：" + e.message); }
+}
+
+function preview(ep, url, tag) {
+  $("#prevTitle").textContent = ep.title + (tag ? " · " + tag : "");
+  $("#prevBody").innerHTML = (url || ep.video_url)
+    ? `<video src="${url || ep.video_url}" controls autoplay playsinline></video>
+       <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+         ${ep.audio_url ? `<a class="btn small" href="${ep.audio_url}" download>下载 MP3</a>` : ""}
+         ${ep.cover_url ? `<a class="btn small" href="${ep.cover_url}" target="_blank">查看封面</a>` : ""}
+       </div>`
+    : `<div class="muted">还没有成片。</div>`;
+  $("#prevMask").classList.add("show");
+}
+
+async function loadVoices() {
+  try {
+    const vs = await api("/api/voices");
+    $("#fVoice").innerHTML = vs.map(v => `<option value="${esc(v.id)}">${esc(v.name)}</option>`).join("");
+  } catch (e) { /* ignore */ }
+}
+
+$("#btnNew").onclick = () => { $("#newMask").classList.add("show"); $("#fName").focus(); };
+document.querySelectorAll("[data-close]").forEach(b => {
+  b.onclick = (e) => e.target.closest(".modal-mask").classList.remove("show");
+});
+document.querySelectorAll(".modal-mask").forEach(m => {
+  m.onclick = (e) => { if (e.target === m) m.classList.remove("show"); };
+});
+
+$("#btnCreate").onclick = async () => {
+  const body = {
+    name: $("#fName").value.trim(),
+    series: $("#fSeries").value.trim() || "睡觉听历史",
+    topic: $("#fTopic").value.trim(),
+    voice: $("#fVoice").value,
+    rate: $("#fRate").value,
+  };
+  if (!body.name) { toast("先填系列目录名"); return; }
+  try {
+    const s = await api("/api/series", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    $("#newMask").classList.remove("show");
+    toast("已创建，改完文案后点开始生成");
+    await load(s.slug);
+  } catch (e) { toast("创建失败：" + e.message); }
+};
+
+fetch("/api/health").then(r => r.json()).then(d => {
+  $("#health").textContent = `ffmpeg ${d.ffmpeg ? "就绪" : "缺失"}`;
+}).catch(() => {});
+
+loadVoices();
+load();
+state.timer = setInterval(async () => {
+  const prev = state.current && state.current.slug;
+  await load(prev);
+}, 5000);
+</script>
+</body>
+</html>

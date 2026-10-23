@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>睡觉听历史 · 氛围模板</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:#070a14; overflow:hidden;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; }
+  #bg { position:absolute; inset:0;
+    background:radial-gradient(125% 85% at 50% 28%, #16223e 0%, #0b1020 58%, #070a14 100%); }
+  #img { position:absolute; inset:0; background-size:cover; background-position:center;
+    opacity:0; filter:brightness(.46) saturate(.92) contrast(1.02); }
+  #glow { position:absolute; left:50%; top:40%; width:760px; height:760px; margin:-380px 0 0 -380px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(255,214,150,.20) 0%, rgba(255,184,120,.07) 36%, transparent 70%); }
+  #series { position:absolute; top:118px; left:0; width:100%; text-align:center; color:#9fb4d8;
+    font-size:34px; letter-spacing:10px; opacity:.82; padding:0 60px; }
+  /* 标题 + 副标题放在一个垂直居中的容器里，避免长标题换行后与副标题重叠 */
+  #center { position:absolute; top:50%; left:0; width:100%; transform:translateY(-50%);
+    padding:0 76px; text-align:center; }
+  #title { color:#f3e9d2; font-size:64px; font-weight:500; line-height:1.28;
+    text-shadow:0 2px 34px rgba(0,0,0,.62); word-break:break-word; white-space:pre-line; }
+  #subject { margin-top:30px; color:#cdb78c; font-size:34px; line-height:1.42;
+    opacity:.92; word-break:break-word; white-space:pre-line; }
+  #foot { position:absolute; bottom:96px; left:0; width:100%; text-align:center; color:#6f80a0;
+    font-size:27px; letter-spacing:5px; }
+  #hairline { position:absolute; left:50%; bottom:150px; width:120px; height:1px;
+    margin-left:-60px; background:linear-gradient(90deg,transparent,#8aa0c8,transparent); opacity:.5; }
+</style>
+</head>
+<body>
+  <div id="bg"></div>
+  <div id="img"></div>
+  <div id="glow"></div>
+  <div id="series">{{SERIES}}</div>
+  <div id="center">
+    <div id="title">{{TITLE}}</div>
+    <div id="subject">{{SUBJECT}}</div>
+  </div>
+  <div id="hairline"></div>
+  <div id="foot">睡前聆听 · 慢慢了解旧时光</div>
+
+<script>
+  var LOOP = 12; // 视频循环周期（秒），window.__update 按此周期做无缝周期动画
+  var imgEl = document.getElementById('img');
+  var bg = "{{BG}}";
+  if (bg && bg.trim() !== "") {
+    imgEl.style.backgroundImage = "url('" + bg + "')";
+    imgEl.style.opacity = "1";
+  }
+  var glow = document.getElementById('glow');
+  window.__update = function (t) {
+    var p = (t % LOOP) / LOOP;            // 0..1
+    var a = p * Math.PI * 2;
+    var s = 1 + 0.12 * Math.sin(a);       // 呼吸缩放
+    var dx = 42 * Math.sin(a);
+    var dy = 26 * Math.cos(a * 0.5);
+    glow.style.transform = "translate(" + dx.toFixed(1) + "px," + dy.toFixed(1) + "px) scale(" + s.toFixed(3) + ")";
+    glow.style.opacity = (0.68 + 0.32 * Math.sin(a)).toFixed(3);
+    if (bg && bg.trim() !== "") {
+      var z = 1.09 + 0.05 * Math.sin(a);  // 底图缓慢推近/拉远
+      imgEl.style.transform = "scale(" + z.toFixed(3) + ")";
+    }
+  };
+  window.__update(0);
+
+  // 标题/副标题自适应：长文案自动缩字号，最多 3 行 / 2 行，避免裁切与重叠
+  (function fit() {
+    function shrink(el, start, min, maxLines) {
+      var s = start, lh = 1.28;
+      while (s > min) {
+        el.style.fontSize = s + 'px';
+        var r = el.getBoundingClientRect();
+        if (el.scrollWidth <= el.clientWidth + 1 && r.height <= s * lh * maxLines + 2) break;
+        s -= 3;
+      }
+    }
+    shrink(document.getElementById('title'), 64, 36, 3);
+    shrink(document.getElementById('subject'), 34, 24, 2);
+  })();
+</script>
+</body>
+</html>

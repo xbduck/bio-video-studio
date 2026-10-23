@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业文化 · 叮叮城故事</title>
+<link rel="stylesheet" href="/style.css?v=2">
+<style>
+  .nav { display: flex; gap: 6px; margin-left: 18px; }
+  .nav a {
+    padding: 6px 12px; border-radius: 8px; text-decoration: none;
+    color: var(--ink-2); font-size: 13px; border: 1px solid transparent;
+  }
+  .nav a:hover { background: var(--panel-2); border-color: var(--line); }
+  .nav a.active { background: var(--accent-soft); color: var(--accent); border-color: #f0d7cf; font-weight: 600; }
+
+  .content { flex: 1 1 auto; min-width: 0; overflow: auto; padding: 26px 30px 50px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-top: 18px; }
+  .ep-card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px; display: flex; flex-direction: column; gap: 9px; cursor: pointer; transition: .12s;
+  }
+  .ep-card:hover { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .ep-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .ep-no { font-weight: 700; font-size: 14px; color: var(--ink-3); }
+  .ep-core { display: inline-block; font-size: 11.5px; padding: 2px 9px; border-radius: 20px; background: var(--panel-2); border: 1px solid var(--line); color: var(--ink-2); }
+  .ep-kw { font-size: 18px; font-weight: 650; }
+  .ep-desc { font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+  .ep-meta { display: flex; gap: 12px; font-size: 12px; color: var(--ink-3); flex-wrap: wrap; }
+  .bar { height: 5px; border-radius: 5px; background: var(--line); overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--ok); }
+  .ep-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+
+  .stats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; min-width: 110px; }
+  .stat .k { font-size: 11.5px; color: var(--ink-3); }
+  .stat .v { font-size: 18px; font-weight: 650; margin-top: 2px; }
+  .empty { padding: 60px 20px; text-align: center; color: var(--ink-3); }
+  .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; opacity: 0; pointer-events: none; transition: .2s; z-index: 60; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark"></span>
+    <div>
+      <h1>企业文化 · 叮叮城故事</h1>
+      <p>TT虎 系列短剧 · 9 集 = 价值观表 9 个行为关键词</p>
+    </div>
+    <nav class="nav">
+      <a href="/">生平短片</a>
+      <a href="/series">系列工厂</a>
+      <a href="/culture/" class="active">企业文化</a>
+    </nav>
+  </div>
+  <div class="topbar-right"><span id="health" class="health"></span></div>
+</header>
+
+<main class="layout">
+  <section class="content" id="content"><div class="empty">加载中…</div></section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const CORE = {
+  "坚守底线": "可信", "说到做到": "可信", "勇于担当": "可信",
+  "拥抱好奇": "有用", "创造价值": "有用", "能拿结果": "有用",
+  "协作赋能": "共生", "平等开放": "共生", "共创共赢": "共生",
+};
+
+async function load() {
+  try {
+    const all = await (await fetch("/api/projects")).json();
+    const list = all.filter(p => (p.title || "").includes("叮叮城故事"));
+    list.sort((a, b) => (a.title || "").localeCompare(b.title || "", "zh"));
+    render(list);
+  } catch (e) {
+    $("#content").innerHTML = `<div class="empty">加载失败：${esc(e.message)}</div>`;
+  }
+}
+
+function render(list) {
+  const total = list.length;
+  const done = list.filter(p => p.output_url).length;
+  const scenes = list.reduce((n, p) => n + (p.scenes || 0), 0);
+  const imgs = list.reduce((n, p) => n + (p.images || 0), 0);
+  const vids = list.reduce((n, p) => n + (p.videos || 0), 0);
+
+  const cards = list.map(p => {
+    const m = (p.title || "").match(/EP\.\d+/);
+    const epno = m ? m[0] : "";
+    const kw = (p.title || "").split(" ").pop() || "";
+    const core = CORE[kw] || "";
+    const sc = p.scenes || 0;
+    const pct = sc ? Math.round((((p.images || 0) + (p.videos || 0)) / 2) / sc * 100) : 0;
+    const skeleton = sc <= 1;
+    return `<div class="ep-card" data-id="${p.id}">
+      <div class="ep-top"><span class="ep-no">${esc(epno)}</span><span class="ep-core">${esc(core)}</span></div>
+      <div class="ep-kw">${esc(kw)}</div>
+      <div class="ep-desc">${sc} 个分镜${skeleton ? "（骨架，待写）" : ""}</div>
+      <div class="ep-meta"><span>图 ${p.images || 0}/${sc}</span><span>视频 ${p.videos || 0}/${sc}</span>${p.output_url ? '<span style="color:var(--ok)">已成片</span>' : ""}</div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="ep-foot"><span style="font-size:12px;color:var(--ink-3)">${p.output_url ? "已出片" : "待制作"}</span><span class="btn small primary">打开分镜 →</span></div>
+    </div>`;
+  }).join("");
+
+  $("#content").innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <div>
+        <h2 style="margin-bottom:6px">叮叮城故事（9 集）</h2>
+        <div style="color:var(--ink-3);font-size:12.5px">T3 价值观表：可信 / 有用 / 共生 × 各 3 个行为关键词 · 主角 TT虎 · 城市 叮叮城</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">集数</div><div class="v">${total}</div></div>
+      <div class="stat"><div class="k">总分镜</div><div class="v">${scenes}</div></div>
+      <div class="stat"><div class="k">已出图</div><div class="v">${imgs}</div></div>
+      <div class="stat"><div class="k">已出视频</div><div class="v">${vids}</div></div>
+      <div class="stat"><div class="k">已成片</div><div class="v">${done} / ${total}</div></div>
+    </div>
+    <div class="grid">${cards || '<div class="empty">还没有条目</div>'}</div>`;
+
+  document.querySelectorAll(".ep-card").forEach(el => {
+    el.onclick = () => { location.href = "/?p=" + encodeURIComponent(el.dataset.id) + "&cat=dingding-city"; };
+  });
+}
+
+fetch("/api/health").then(r => r.json()).then(d => {
+  $("#health").textContent = "ffmpeg " + (d.ffmpeg ? "就绪" : "缺失");
+}).catch(() => {});
+
+load();
+</script>
+</body>
+</html>

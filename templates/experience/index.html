@@ -127,14 +127,15 @@ document.documentElement.style.setProperty('--c1', c1);
 document.documentElement.style.setProperty('--c2', c2);
 
 const wm = document.getElementById('wm');
-const cat = document.getElementById('cat');
-const txt = document.getElementById('txt');
 const bar = document.getElementById('bar');
+const topEl = document.querySelector('.top');
+const centerEl = document.querySelector('.center');
+const bottomEl = document.querySelector('.bottom');
 
 // 文案经 textContent 注入，避免引号/特殊字符破坏 JS 字符串或 HTML
 wm.textContent = String(S.idx);
-cat.textContent = S.category || '';
-txt.textContent = S.text || '';
+document.getElementById('cat').textContent = S.category || '';
+document.getElementById('txt').textContent = S.text || '';
 document.title = (S.category ? S.category + ' · ' : '') + S.idx + ' / ' + S.total;
 
 // 文案自适应字号（越短越大，最长约 14 字换行）
@@ -151,21 +152,20 @@ function update(t) {
   wm.style.opacity = (0.07 * wk).toFixed(3);
   wm.style.transform = 'translate(-50%,-50%) scale(' + (1.10 - 0.10 * wk).toFixed(3) + ')';
 
-  // 分类标签：从上落下淡入
+  // 分类标签：从上落下淡入（动画在父容器 .top）
   const ck = ease(clamp(t / E, 0, 1));
-  cat.style.opacity = ck.toFixed(3);
-  cat.style.transform = 'translateY(' + ((1 - ck) * -22).toFixed(1) + 'px)';
+  topEl.style.opacity = ck.toFixed(3);
+  topEl.style.transform = 'translateY(' + ((1 - ck) * -22).toFixed(1) + 'px)';
 
-  // 中心文案：略延迟、从下浮起淡入
+  // 中心文案：略延迟、从下浮起淡入（动画在父容器 .center）
   const tk = ease(clamp((t - 0.12) / E, 0, 1));
-  txt.style.opacity = tk.toFixed(3);
-  txt.style.transform = 'translateY(' + ((1 - tk) * 34).toFixed(1) + 'px)';
+  centerEl.style.opacity = tk.toFixed(3);
+  centerEl.style.transform = 'translate(-50%, -50%) translateY(' + ((1 - tk) * 34).toFixed(1) + 'px)';
 
-  // 进度条 + 计数淡入并推进
+  // 进度条：真实整体进度（idx/total），随底部容器淡入
   const pk = ease(clamp(t / E, 0, 1));
-  bar.style.width = (100 * pk).toFixed(1) + '%';
-  const bottom = document.querySelector('.bottom');
-  bottom.style.opacity = pk.toFixed(3);
+  bar.style.width = (S.idx / S.total * 100).toFixed(1) + '%';
+  bottomEl.style.opacity = pk.toFixed(3);
 }
 
 window.__update = update;

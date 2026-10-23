@@ -1,0 +1,43 @@
+{
+  "slug": "ming-emperors",
+  "series": "睡觉听历史",
+  "topic": "大明王朝十六帝",
+  "defaults": {
+    "voice": "zh-CN-YunjianNeural",
+    "rate": "-50%",
+    "bgm": "",
+    "bgm_volume": 0.1
+  },
+  "episodes": [
+    {
+      "id": "EP.01",
+      "file": "ep01.json",
+      "note": "太祖朱元璋 + 惠帝朱允炆：开国与削藩"
+    },
+    {
+      "id": "EP.02",
+      "file": "ep02.json",
+      "note": "成祖朱棣：靖难、迁都、下西洋、五征漠北"
+    },
+    {
+      "id": "EP.03",
+      "file": "ep03.json",
+      "note": "仁宗 + 宣宗：仁宣之治"
+    },
+    {
+      "id": "EP.04",
+      "file": "ep04.json",
+      "note": "英宗 + 代宗：土木堡与夺门之变"
+    },
+    {
+      "id": "EP.05",
+      "file": "ep05.json",
+      "note": "世宗 + 穆宗 + 神宗：嘉靖修道与万历怠政"
+    },
+    {
+      "id": "EP.06",
+      "file": "ep06.json",
+      "note": "光宗 + 熹宗 + 思宗：一月天子到煤山"
+    }
+  ]
+}
