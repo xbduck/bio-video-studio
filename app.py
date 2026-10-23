@@ -12,15 +12,16 @@ import subprocess
 import sys
 import threading
 import webbrowser
+from urllib.parse import quote
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from core import compose, config, jobs, render, store, tts, video_plan
+from core import compose, config, culture, jobs, render, store, tts, video_plan
 from core import series as series_factory
 
 app = FastAPI(title="生平短片工厂", version="1.0")
@@ -387,6 +388,76 @@ def api_video_plan(project_id: str, route: str = "hf"):
         route = "hf"
     scenes = [s for s in p.get("scenes", []) if s.get("image_path") and not s.get("video_path")]
     return video_plan.plan_videos(scenes, route)
+
+
+# --------------------------------------------------------------------------
+# 企业文化专栏：角色档案 / 剧本导出 / 交付自检
+# --------------------------------------------------------------------------
+
+@app.get("/api/culture/characters")
+def api_culture_characters(project: str | None = None):
+    """解析 dingding-city/角色圣经.md → 角色卡 + 视觉体系 + 色调 + 产线红线。
+
+    传 project（项目 id 或 slug）时，额外返回「本集出场」标记和本集定妆照。
+    """
+    p = store.load_project(project) if project else None
+    return culture.load_characters(p)
+
+
+@app.get("/api/culture/avatar/{name}")
+def api_culture_avatar(name: str, project: str | None = None):
+    """返回角色头像：本集定妆照（avatars/<slug>/）优先，回落到系列通用图。"""
+    p = store.load_project(project) if project else None
+    path = culture.avatar_path(name, p)
+    if not path:
+        raise HTTPException(404, "暂无该角色照片")
+    return FileResponse(path, headers={"Cache-Control": "public, max-age=600"})
+
+
+@app.get("/api/projects/{project_id}/delivery-check")
+def api_delivery_check(project_id: str):
+    """按母版硬约束逐条自检，返回 pass / warn / fail 与问题镜号。"""
+    p = store.load_project(project_id)
+    if not p:
+        raise HTTPException(404, "项目不存在")
+    return culture.check_delivery(p)
+
+
+_EXPORTERS = {
+    "md": ("text/markdown; charset=utf-8", ".md", "剧本"),
+    "srt": ("application/x-subrip; charset=utf-8", ".srt", "字幕"),
+    "csv": ("text/csv; charset=utf-8", ".csv", "剪辑单"),
+}
+
+
+@app.get("/api/projects/{project_id}/export/{kind}")
+def api_export(project_id: str, kind: str):
+    """导出剧本 Markdown / 字幕 SRT / 剪辑单 CSV（浏览器直接下载）。"""
+    meta = _EXPORTERS.get(kind)
+    if not meta:
+        raise HTTPException(400, f"不支持的导出类型：{kind}")
+    p = store.load_project(project_id)
+    if not p:
+        raise HTTPException(404, "项目不存在")
+
+    media_type, ext, suffix = meta
+    if kind == "md":
+        content = culture.build_script_md(p)
+    elif kind == "srt":
+        content = culture.build_srt(p)
+    else:
+        content = culture.build_shotlist_csv(p)
+
+    base = (p.get("title") or p.get("person") or "script").replace("/", "-")
+    fname = f"{base}_{suffix}{ext}"
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition":
+                f"attachment; filename=\"export{ext}\"; filename*=UTF-8''{quote(fname)}"
+        },
+    )
 
 
 # --------------------------------------------------------------------------

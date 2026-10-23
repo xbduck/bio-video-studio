@@ -5,15 +5,15 @@
   "title": "叮叮城故事 · EP.01 坚守底线",
   "summary": "TT虎 作为叮叮城运营管家，面对月底业绩诱惑与六张临期证件，最终守住底线，并连夜排查出三台刹车片磨穿的车辆，避免事故。",
   "style": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters",
-  "voice": "zh-CN-YunjianNeural",
+  "voice": "",
   "rate": "+0%",
   "aspect": "landscape",
   "crop_bottom": 0,
-  "burn_subtitles": true,
+  "burn_subtitles": false,
   "bgm_path": "/Users/lingmf/Downloads/workbuddy/bio-video-studio/assets/bgm/city_of_the_empire.mp3",
   "bgm_volume": 0.18,
   "created_at": "2026-10-21 17:09:08",
-  "updated_at": "2026-10-21 22:03:45",
+  "updated_at": "2026-10-23 14:26:27",
   "scenes": [
     {
       "index": 1,
@@ -25,11 +25,12 @@
       "sound": "雨声渐弱、电子提示音、订单弹出音效、节奏开始加快",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, TT-Hu driving a white delivery car into a rainy-night city distribution center, wet asphalt reflecting neon, order screens glowing",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. the white car drives in, TT-Hu steps out and walks into the hall, screens pop up with order alerts, TT-Hu quickly accepts",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/01.jpg",
+      "video_path": "videos/01.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     },
     {
       "index": 2,
@@ -41,11 +42,12 @@
       "sound": "雨声减弱、电子提示音、轻微键盘声、节奏稍快的叙事音乐",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, TT-Hu in a bright operations center, curved big screen full of red pending-review markers, rain outside the window, small floating assistant holding a tablet",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. TT-Hu checks rows of review terminals, the assistant floats in lightly and points at key info, TT-Hu turns to look",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/02.jpg",
+      "video_path": "videos/02.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     },
     {
       "index": 3,
@@ -57,11 +59,12 @@
       "sound": "推门声、文件磕碰声，略带狡黠的背景BGM",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, a gray cat boss in a gray suit and round glasses pushing a thick stack of documents onto a wooden desk, smooth smile",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. the gray cat boss pushes the door open, smiles widely, slides the file stack across the desk toward TT-Hu",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/03.jpg",
+      "video_path": "videos/03.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     },
     {
       "index": 4,
@@ -73,11 +76,12 @@
       "sound": "轻微卡片滑动声，氛围紧张的配乐",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, close-up macro of a gray cat paw sliding a glowing gold card across a dark wooden desk, gold light glinting",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. the paw slides a glowing gold card slowly across the dark desk, gold light flickers in TT-Hu's eyes",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/04.jpg",
+      "video_path": "videos/04.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     },
     {
       "index": 5,
@@ -89,11 +93,12 @@
       "sound": "心跳声、小声拉扯音效，压抑BGM",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, TT-Hu sweating on the forehead, two tiny mini tigers (angel and devil) sitting on his shoulders pulling his ears, conflicted eyes looking at the screen",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. micro-acting: the tiny angel and devil tigers on his shoulders tug his ears, a sweat drop rolls, TT-Hu glances anxiously at the screen",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/05.jpg",
+      "video_path": "videos/05.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     },
     {
       "index": 6,
@@ -105,11 +110,12 @@
       "sound": "柔和温暖的轻音乐",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, warm flashback, golden sunlight through blinds, TT-Hu pinning an ID badge to his chest, opening an employee handbook with a blank first page",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. warm flashback, TT-Hu pins the badge on his chest, opens the handbook, soft warm light, calm expression",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/06.jpg",
+      "video_path": "videos/06.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     },
     {
       "index": 7,
@@ -121,11 +127,12 @@
       "sound": "安静停顿，低沉有力的配乐",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, low-angle shot, TT-Hu stands up and pushes the gold card back across the desk, resolute eyes, the gray cat boss blurred in the foreground",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. low angle, TT-Hu rises and firmly pushes the gold card back on the desk, steady gaze, short arms forward",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/07.jpg",
+      "video_path": "videos/07.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     },
     {
       "index": 8,
@@ -137,11 +144,12 @@
       "sound": "摔门声、哗哗雨声，情绪压抑BGM",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, the gray cat boss's face darkens, grabbing his coat and storming toward the door, heavy rain outside the floor-to-ceiling window, calm reflection of TT-Hu on the glass",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. the boss grabs his coat and slams the door, rain outside intensifies, TT-Hu's quiet reflection on the wet glass",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/08.jpg",
+      "video_path": "videos/08.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     },
     {
       "index": 9,
@@ -153,11 +161,12 @@
       "sound": "手电开关声、环境底噪，警示音效",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, night underground garage, TT-Hu crouched under a white car, flashlight illuminating a worn thin brake disc, the small assistant projecting red danger warning light",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. flashlight sweeps under the car chassis, revealing a brake pad worn to a thin layer, red warning glow from the assistant",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/09.jpg",
+      "video_path": "videos/09.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     },
     {
       "index": 10,
@@ -169,11 +178,12 @@
       "sound": "风声、紧张悬疑配乐",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, cold-tone imagined scene, rainy-night winding mountain road, a white car with glowing red brake lights, heavy fog covering the road",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. foggy winding mountain road at rainy night, red brake lights of the white car, tense ominous atmosphere",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/10.jpg",
+      "video_path": "videos/10.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     },
     {
       "index": 11,
@@ -185,11 +195,12 @@
       "sound": "盖章清脆声响，舒缓转明朗的BGM",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, morning scene, the gray cat boss signing a compliance agreement with head lowered, the assistant pressing a green compliance seal, then a handshake",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. the boss signs the agreement, a green seal is stamped crisply, the two shake hands",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/11.jpg",
+      "video_path": "videos/11.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     },
     {
       "index": 12,
@@ -201,13 +212,17 @@
       "sound": "温暖大气的收尾国风配乐",
       "image_prompt": "3D cartoon cinematic style, chibi Q-version tiger character TT-Hu with orange-gold fur, dark brown/black stripes, exactly two dark brown stripes on each cheek forming a '>' shape beside the outer corner of each eye (no other cheek stripes), clear black 王 mark on forehead, white muzzle and belly, blue inner ears, big round black eyes, pink nose, short round limbs, blue work uniform with ID badge, Pixar-like 3D render, soft global illumination, 35mm anamorphic lens, cinematic lighting, rainy-night city of Dingding, neon blue-orange contrast, no readable text, no letters, dawn rooftop, TT-Hu seen from behind overlooking the myriad lights of the city of Dingding, breeze ruffling his fur",
       "video_prompt": "Locked-off static camera, absolutely no camera movement, no zoom; keep the character's face, proportions, body and outfit perfectly consistent, fully inside the frame, no morphing, NO human hands, NO tail visible, nobody else enters. back view of TT-Hu on a rooftop at dawn, overlooking the city lights, gentle breeze moving his fur, calm and warm",
-      "image_path": "",
-      "video_path": "",
+      "image_path": "images/12.jpg",
+      "video_path": "videos/12.mp4",
       "audio_path": "",
-      "image_status": "pending",
-      "video_status": "pending"
+      "image_status": "done",
+      "video_status": "done",
+      "image_source": "video-frame"
     }
   ],
   "category": "dingding-city",
-  "series": "叮叮城故事"
+  "series": "叮叮城故事",
+  "output_url": "/projects/叮叮城故事EP.01_坚守底线/output/叮叮城故事EP.01_坚守底线_16x9.mp4",
+  "cover_url": "/projects/叮叮城故事EP.01_坚守底线/output/cover.jpg",
+  "output_name": "叮叮城故事EP.01_坚守底线_16x9.mp4"
 }

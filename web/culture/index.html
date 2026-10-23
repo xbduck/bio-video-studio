@@ -30,6 +30,9 @@
   .bar { height: 5px; border-radius: 5px; background: var(--line); overflow: hidden; }
   .bar i { display: block; height: 100%; background: var(--ok); }
   .ep-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+  .ep-link { font-size: 12px; color: var(--ink-2); text-decoration: none; padding: 3px 7px;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); white-space: nowrap; }
+  .ep-link:hover { border-color: var(--accent); color: var(--accent); }
 
   .stats { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
   .stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; min-width: 110px; }
@@ -105,7 +108,13 @@ function render(list) {
       <div class="ep-desc">${sc} 个分镜${skeleton ? "（骨架，待写）" : ""}</div>
       <div class="ep-meta"><span>图 ${p.images || 0}/${sc}</span><span>视频 ${p.videos || 0}/${sc}</span>${p.output_url ? '<span style="color:var(--ok)">已成片</span>' : ""}</div>
       <div class="bar"><i style="width:${pct}%"></i></div>
-      <div class="ep-foot"><span style="font-size:12px;color:var(--ink-3)">${p.output_url ? "已出片" : "待制作"}</span><span class="btn small primary">打开分镜 →</span></div>
+      <div class="ep-foot"><span style="font-size:12px;color:var(--ink-3)">${p.output_url ? "已出片" : "待制作"}</span>
+        <span style="display:flex;gap:6px;align-items:center">
+          <a class="ep-link" data-panel="script" data-id="${p.id}" href="/?p=${encodeURIComponent(p.id)}&cat=dingding-city&panel=script">剧本</a>
+          <a class="ep-link" data-panel="chars" data-id="${p.id}" href="/?p=${encodeURIComponent(p.id)}&cat=dingding-city&panel=chars">角色</a>
+          <span class="btn small primary">打开分镜 →</span>
+        </span>
+      </div>
     </div>`;
   }).join("");
 
@@ -127,6 +136,8 @@ function render(list) {
 
   document.querySelectorAll(".ep-card").forEach(el => {
     el.onclick = () => { location.href = "/?p=" + encodeURIComponent(el.dataset.id) + "&cat=dingding-city"; };
+    // 「剧本 / 角色」直达链接自己跳转，别被卡片的整块点击覆盖掉
+    el.querySelectorAll(".ep-link").forEach(a => a.addEventListener("click", e => e.stopPropagation()));
   });
 }
 

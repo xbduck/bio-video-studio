@@ -12,6 +12,26 @@ import threading
 from . import atmos, compose, config, jobs, store, tts, video_plan
 
 
+def output_basename(project: dict) -> str:
+    """成片文件名主干（不含画幅后缀与 .mp4）。
+
+    - 企业文化专栏「叮叮城故事」：用剧集 slug / 标题，如「叮叮城故事EP.01_坚守底线」，
+      不再套用「<人物>_生平短片」。
+    - 其余（生平短片）：沿用「<人物>_生平短片」。
+    """
+    is_culture = (
+        project.get("category") == "dingding-city"
+        or project.get("series") == "叮叮城故事"
+    )
+    if is_culture:
+        name = (project.get("slug") or project.get("title") or project.get("person") or "成片").strip()
+        # 文件名安全：把路径分隔符换成全角，避免被当成目录
+        name = name.replace("/", "／").replace("\\", "＼")
+        return name or "成片"
+    person = (project.get("person") or "人物").strip() or "人物"
+    return f"{person}_生平短片"
+
+
 def parse_motion(text: str) -> dict:
     """从运镜提示词解析本地渲染的运镜类型（仅做相机运动，不做真实物理运动）。
 
@@ -324,6 +344,8 @@ def render_project(project_id: str, with_title: bool = True, with_bgm: bool = Tr
 
     # ---- 3. 片头 -------------------------------------------------------
     final = os.path.join(clips_dir, "_body.mp4")
+    # 项目级开关：project["with_title"]=false 时不出片头（片段自身已带角标/字幕时用）
+    with_title = bool(with_title and project.get("with_title", True))
     if with_title and usable:
         jobs.update(job_id, 96, "生成片头")
         title_clip = os.path.join(clips_dir, "00_title.mp4")
@@ -347,7 +369,7 @@ def render_project(project_id: str, with_title: bool = True, with_bgm: bool = Tr
         bgm = os.path.join(pdir, bgm)
     # 横屏成片单独命名，避免与同一项目的竖屏成片互相覆盖
     suffix = "_16x9" if aspect == "landscape" else ""
-    out_name = f"{project['person']}_生平短片{suffix}.mp4"
+    out_name = f"{output_basename(project)}{suffix}.mp4"
     out_path = os.path.join(output_dir, out_name)
 
     if with_bgm and bgm and os.path.exists(bgm):
@@ -366,6 +388,7 @@ def render_project(project_id: str, with_title: bool = True, with_bgm: bool = Tr
 
     return {
         "output": out_path,
+        "name": out_name,
         "url": "/" + store.rel(out_path),
         "cover": "/" + store.rel(cover) if os.path.exists(cover) else "",
         "duration": compose.probe_duration(out_path),
@@ -384,6 +407,7 @@ def start_render(project_id: str, with_title: bool = True, with_bgm: bool = True
             project = store.load_project(project_id)
             project["output_path"] = result["output"]
             project["output_url"] = result["url"]
+            project["output_name"] = result.get("name") or os.path.basename(result["output"])
             project["cover_url"] = result["cover"]
             store.save_project(project)
             jobs.finish(job_id, result)

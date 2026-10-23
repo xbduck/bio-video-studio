@@ -72,9 +72,9 @@ async function loadProjects(selectId) {
   all = CULTURE_MODE ? all.filter(isCulture) : all.filter((p) => !isCulture(p));
   state.projects = all;
   renderProjectList();
-  if (selectId) openProject(selectId);
-  else if (state.current) openProject(state.current.id, true);
-  else if (state.projects.length && !state.current) openProject(state.projects[0].id);
+  if (selectId) await openProject(selectId);
+  else if (state.current) await openProject(state.current.id, true);
+  else if (state.projects.length && !state.current) await openProject(state.projects[0].id);
   else if (!state.projects.length) {
     $('emptyState').classList.remove('hidden');
     $('projectView').classList.add('hidden');
@@ -142,6 +142,9 @@ function renderProject() {
   renderScenes();
   updateSteps();
   renderResult();
+
+  // 企业文化专栏：注入「剧本 / 角色 / 自检」入口，并在抽屉打开时跟随最新数据刷新
+  if (CULTURE_MODE && window.CulturePanel) CulturePanel.render(p);
 }
 
 function updateSteps() {
@@ -643,7 +646,13 @@ function renderResult() {
   box.classList.remove('hidden');
   $('resultVideo').src = p.output_url;
   $('btnDownload').href = p.output_url;
-  $('btnDownload').setAttribute('download', `${p.person}_生平短片.mp4`);
+  // 下载名与磁盘成片一致：优先用后端记录的 output_name；
+  // 企业文化专栏（叮叮城故事）用剧集 slug，其余沿用「<人物>_生平短片」
+  const isCulture = p.category === 'dingding-city' || p.series === '叮叮城故事';
+  const dlBase = isCulture
+    ? (p.slug || p.title || p.person || '成片')
+    : `${p.person || '人物'}_生平短片`;
+  $('btnDownload').setAttribute('download', p.output_name || `${dlBase}.mp4`);
   $('resultMeta').textContent = `输出目录：projects/${p.slug}/output`;
 }
 $('btnOpenFolder').onclick = async () => {
@@ -808,9 +817,19 @@ $('btnDelete').onclick = async () => {
 /* ---------------- 启动 ---------------- */
 
 (async function init() {
-  if (CULTURE_MODE) applyCultureBranding();
+  if (CULTURE_MODE) {
+    applyCultureBranding();
+    if (window.CulturePanel) {
+      CulturePanel.init({ api, esc, toast });
+    }
+  }
   await loadVoices();
   await loadProjects(QS.get('p') || undefined);
+  // 深链：?cat=dingding-city&panel=script|chars|check 直接展开导演面板
+  const panel = QS.get('panel');
+  if (CULTURE_MODE && panel && window.CulturePanel && state.current) {
+    CulturePanel.open(panel);
+  }
   try {
     const h = await api('/api/health');
     $('health').textContent = `ffmpeg ${h.ffmpeg ? '就绪' : '缺失'} · 待处理任务 ${h.pending_tasks}`;

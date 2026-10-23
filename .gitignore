@@ -57,3 +57,11 @@ series/*/.state.json
 
 # 运行时模型权重（第三方依赖，约 168MB，超 GitHub 单文件 100MB 硬限制，不入库；运行时自行下载/放置）
 models/
+
+# 角色头像（导演面板交付素材，需版本化；覆盖上面的 *.png / *.jpg 全局忽略）
+# 目录结构：dingding-city/avatars/<角色名>.png（系列通用回落）+ dingding-city/avatars/<本集slug>/<角色名>.png（按集）
+!dingding-city/avatars/
+!dingding-city/avatars/**
+# 用户原始截图的临时备份不入库（换图过程产物）
+dingding-city/avatars/_prev_screenshots/
+dingding-city/avatars/**/_prev_screenshots/
