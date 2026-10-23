@@ -51,5 +51,9 @@ projects/*/video/
 *.bak*
 projects/*/*_backup.json
 
+# 系列运行态（pid / state 属运行时，不入库）
+*.pid
+series/*/.state.json
+
 # 运行时模型权重（第三方依赖，约 168MB，超 GitHub 单文件 100MB 硬限制，不入库；运行时自行下载/放置）
 models/
